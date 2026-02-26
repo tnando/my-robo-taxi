@@ -1,8 +1,10 @@
 'use client';
 
+import { BottomNav } from '@/components/layout/BottomNav';
+
 /**
  * Main app layout — wraps all authenticated pages.
- * Provides the BottomNav shell and auth gate.
+ * Provides the BottomNav shell. Auth gate will be added when NextAuth is integrated.
  */
 export default function MainLayout({
   children,
@@ -12,7 +14,7 @@ export default function MainLayout({
   return (
     <div className="min-h-screen bg-bg-primary">
       {children}
-      {/* BottomNav will be added here */}
+      <BottomNav />
     </div>
   );
 }
