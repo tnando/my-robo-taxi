@@ -113,6 +113,29 @@ Commit after completing each logical unit of work. A logical unit is one of:
 - **Never commit secrets** (.env, tokens, credentials)
 - **Never commit node_modules, .next, or build artifacts**
 
+## Pull Request Requirements
+
+Every PR **must** include Playwright-recorded demo videos of all affected screens. This is non-negotiable.
+
+### How to Record
+
+1. Ensure the dev server is running (`npm run dev`)
+2. Run: `node scripts/record-demos.mjs`
+3. Videos are saved to `docs/videos/` as `.webm` files
+4. Commit the videos to the branch and reference them in the PR description
+
+### PR Description Format
+
+- Include a **Screens** section with the video files committed to the repo (use relative paths: `docs/videos/filename.webm`)
+- Since the repo is private, do NOT use `raw.githubusercontent.com` URLs — they won't render. Use relative paths or commit the assets to the repo.
+- For any new screens or modified interactions, add or update the corresponding recording scene in `scripts/record-demos.mjs`
+
+### When to Re-record
+
+- Any visual change to a screen (layout, colors, typography, spacing)
+- Any new screen or route added
+- Any interaction change (new buttons, toggle behavior, navigation flow)
+
 ## What NOT to Do
 
 - Do NOT put business logic in `app/` pages — pages are thin orchestrators
