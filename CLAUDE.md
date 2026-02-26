@@ -115,43 +115,19 @@ Commit after completing each logical unit of work. A logical unit is one of:
 
 ## Pull Request Requirements
 
-Every PR **must** include Playwright-recorded demo videos of all affected screens. This is non-negotiable.
-
-### How to Record
-
-1. Ensure the dev server is running (`npm run dev`)
-2. Run: `node scripts/record-demos.mjs`
-3. Videos are saved to `docs/videos/` as `.webm` files
-4. Commit the videos to the branch and reference them in the PR description
-
-### PR Description Format
-
-- Include a **Screens** section with videos and screenshots committed to the repo
-- For any new screens or modified interactions, add or update the corresponding recording scene in `scripts/record-demos.mjs`
+Every PR **must** include screenshots of all affected screens committed to the repo.
 
 ### Linking Media in PR Descriptions (Private Repo)
 
 Since this repo is private, relative paths and `raw.githubusercontent.com` URLs do NOT work in PR descriptions. Use full blob URLs with `?raw=true`:
 
-**Screenshots (render inline):**
 ```markdown
 ![Sign In](https://github.com/tnando/my-robo-taxi/blob/<branch>/docs/screenshots/01-signin.png?raw=true)
-```
-
-**Videos (click to download):**
-```markdown
-[03-home-map.webm](https://github.com/tnando/my-robo-taxi/blob/<branch>/docs/videos/03-home-map.webm?raw=true)
 ```
 
 The pattern is: `https://github.com/tnando/my-robo-taxi/blob/<branch>/<path>?raw=true`
 
 Replace `<branch>` with the PR branch name (e.g., `feature/frontend-ui`).
-
-### When to Re-record
-
-- Any visual change to a screen (layout, colors, typography, spacing)
-- Any new screen or route added
-- Any interaction change (new buttons, toggle behavior, navigation flow)
 
 ## What NOT to Do
 
