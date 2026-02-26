@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 
 import type { Drive } from '@/types/drive';
 
@@ -8,6 +9,12 @@ import { StatItem } from './StatItem';
 import { LocationTimeline } from './LocationTimeline';
 import { SpeedSparkline } from './SpeedSparkline';
 import { FSDSection } from './FSDSection';
+
+// Dynamic import — Mapbox depends on window/document
+const DriveRouteMap = dynamic(
+  () => import('@/components/map/DriveRouteMap').then((m) => ({ default: m.DriveRouteMap })),
+  { ssr: false },
+);
 
 /** Props for the DriveSummaryScreen component. */
 export interface DriveSummaryScreenProps {
@@ -38,9 +45,15 @@ export function DriveSummaryScreen({ drive }: DriveSummaryScreenProps) {
         </div>
       </header>
 
-      {/* Hero map placeholder — will be replaced with DriveRouteMap */}
-      <div className="mx-6 rounded-2xl overflow-hidden mb-8 h-48 bg-bg-surface flex items-center justify-center">
-        <p className="text-text-muted text-xs">Route map — coming soon</p>
+      {/* Hero route map */}
+      <div className="mx-6 rounded-2xl overflow-hidden mb-8 h-48 bg-bg-surface">
+        {drive.routePoints.length >= 2 ? (
+          <DriveRouteMap routeCoordinates={drive.routePoints} className="h-48 rounded-2xl" />
+        ) : (
+          <div className="h-full flex items-center justify-center">
+            <p className="text-text-muted text-xs">No route data</p>
+          </div>
+        )}
       </div>
 
       {/* Location labels */}
