@@ -1,6 +1,5 @@
-import { PrismaAdapter } from '@auth/prisma-adapter';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import type { NextAuthOptions } from 'next-auth';
-import type { Adapter } from 'next-auth/adapters';
 import type { Provider } from 'next-auth/providers/index';
 import GoogleProvider from 'next-auth/providers/google';
 import AppleProvider from 'next-auth/providers/apple';
@@ -26,7 +25,7 @@ if (process.env.APPLE_ID && process.env.APPLE_SECRET) {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as Adapter,
+  adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
   providers,
   callbacks: {
