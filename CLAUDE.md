@@ -94,6 +94,15 @@ Each feature directory contains:
 - Use path aliases: `@/components/...`, `@/features/...`, `@/lib/...`, `@/types/...`
 - Group imports: React/Next.js → external libraries → internal modules (blank line between groups)
 
+## Branching Strategy
+
+Create a feature branch from `main` for every issue. Branch name format: `<issue-number>-<short-kebab-description>` derived from the issue title.
+
+Examples:
+- Issue #23 "Simplify auth to social-only (Google + Apple)" → `23-simplify-auth-social-only`
+- Issue #10 "Auth middleware for protected routes" → `10-auth-middleware`
+- Issue #42 "Add drive sharing via deep link" → `42-drive-sharing-deep-link`
+
 ## Commit Strategy
 
 Commit after completing each logical unit of work. A logical unit is one of:
