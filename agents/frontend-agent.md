@@ -211,8 +211,8 @@ These routes mirror the mock app's route structure in `ui-mocks/src/App.tsx`:
 
 | Route | Mock File | Description |
 |---|---|---|
-| `/` | `SignIn.tsx` | Sign in page (landing/redirect) |
-| `/signup` | `SignUp.tsx` | Sign up page |
+| `/` | `SignIn.tsx` | Sign in page — social-only auth (Google + Apple) |
+| `/signup` | `SignUp.tsx` | Redirects to `/signin` (no separate sign-up flow) |
 | `/home` | `Home.tsx` | **Main screen** — full-screen live map with bottom sheet. This IS the dashboard (no separate `/dashboard` route). |
 | `/home/empty` | `HomeEmpty.tsx` | Empty state — no vehicles linked yet |
 | `/drives` | `DriveHistory.tsx` | Drive history list |
@@ -260,8 +260,7 @@ These routes mirror the mock app's route structure in `ui-mocks/src/App.tsx`:
 
 | Component | Description |
 |---|---|
-| `auth/SignInForm` | Email/password form matching `SignIn.tsx` |
-| `auth/SignUpForm` | Registration form matching `SignUp.tsx` |
+| `auth/SignInForm` | Social-only auth (Google + Apple) matching `SignIn.tsx` |
 | `auth/TeslaLinkButton` | Tesla account linking button (in Settings) |
 
 ### Drives

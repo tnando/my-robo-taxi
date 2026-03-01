@@ -1,14 +1,13 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { Logo } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/Button';
-import { GoogleIcon, AppleIcon, EmailIcon } from '@/components/ui/SocialIcons';
+import { GoogleIcon, AppleIcon } from '@/components/ui/SocialIcons';
 
 /**
- * Sign-in form with social auth buttons and sign-up link.
+ * Sign-in form with social auth buttons (Google + Apple only).
  * Matches the SignIn.tsx mock: centered layout, outline auth buttons, gold accent.
  */
 export function SignInForm() {
@@ -35,18 +34,7 @@ export function SignInForm() {
           <Button variant="social" icon={<AppleIcon />} onClick={handleAuth}>
             Continue with Apple
           </Button>
-          <Button variant="social" icon={<EmailIcon />} onClick={handleAuth}>
-            Continue with Email
-          </Button>
         </div>
-
-        {/* Sign Up Link */}
-        <p className="text-center text-text-muted text-sm font-light">
-          New here?{' '}
-          <Link href="/signup" className="text-gold font-medium">
-            Sign up
-          </Link>
-        </p>
       </div>
     </div>
   );

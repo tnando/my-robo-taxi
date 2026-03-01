@@ -16,38 +16,31 @@ This document catalogs every screen in the MyRoboTaxi UI mockup app. All screens
 |---|---|
 | Route | `/` |
 | File | `src/pages/SignIn.tsx` |
-| Flow | Owner Onboarding (login branch) |
+| Flow | Owner Onboarding, Viewer Onboarding |
 | Nav | No bottom nav |
 | Status | Complete |
 
-**Description:** Minimal dark sign-in screen. Centered layout with abundant vertical spacing.
+**Description:** Minimal dark sign-in screen with social-only auth (Google + Apple). Centered layout with abundant vertical spacing.
 
 - MyRoboTaxi logo (hexagonal line art in gold) with branded wordmark ("My**Robo**Taxi" with gold accent)
 - "Sign in to continue" in light gray
-- Three outline-style auth buttons: Google, Apple, Email -- dark background with subtle border
-- "New here? Sign up" link at bottom in gold
+- Two outline-style auth buttons: Google, Apple -- dark background with subtle border
+- Account creation happens automatically on first OAuth sign-in
 - All auth buttons navigate to `/home` in the mockup
 
 ---
 
-### 2. Sign Up
+### 2. Sign Up (Redirect)
 
 | Property | Value |
 |---|---|
 | Route | `/signup` |
 | File | `src/pages/SignUp.tsx` |
-| Flow | Owner Onboarding (sign-up branch), Viewer Onboarding |
+| Flow | Redirect to Sign In |
 | Nav | No bottom nav |
 | Status | Complete |
 
-**Description:** Account creation with the same minimal dark aesthetic.
-
-- Logo and "Create Account" heading
-- Social auth buttons (Google, Apple) -- outline style
-- Divider: "or use email"
-- Name, email, password inputs -- dark surface backgrounds with subtle borders
-- Gold "Create Account" CTA button
-- Link back to sign in
+**Description:** Redirects to `/signin` (Sign In). With social-only auth, there is no separate sign-up flow — account creation happens automatically on first OAuth sign-in via Google or Apple.
 
 ---
 
@@ -239,13 +232,11 @@ There is no "Full" state. The sheet snaps between peek and half based on drag di
 ### Navigation Flow Map
 
 ```
-/ (Sign In)
-  -> /signup (Create Account)
+/ (Sign In — social-only: Google + Apple)
   -> /home (after auth)
 
-/signup (Sign Up)
-  -> / (back to Sign In)
-  -> /home (after auth)
+/signup (Redirect)
+  -> / (redirects to Sign In)
 
 /home (Live Map) [DEFAULT]
   -> tap dot indicators to switch between vehicles

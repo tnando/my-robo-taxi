@@ -1,9 +1,9 @@
-import { SignUpForm } from '@/features/auth';
+import { redirect } from 'next/navigation';
 
 /**
- * Sign-up page — account creation screen.
- * Renders the SignUpForm feature component.
+ * Sign-up page — redirects to /signin since auth is social-only.
+ * Account creation happens automatically on first OAuth sign-in.
  */
 export default function SignUpPage() {
-  return <SignUpForm />;
+  redirect('/signin');
 }

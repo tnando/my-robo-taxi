@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export function SignIn() {
   const navigate = useNavigate();
@@ -46,27 +46,7 @@ export function SignIn() {
             </svg>
             Continue with Apple
           </button>
-
-          {/* Email */}
-          <button
-            onClick={() => navigate('/home')}
-            className="w-full flex items-center justify-center gap-3 border border-border-default rounded-xl py-4 px-6 text-text-primary font-medium hover:bg-bg-surface transition-colors"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="4" width="20" height="16" rx="2" />
-              <path d="M22 7l-10 7L2 7" />
-            </svg>
-            Continue with Email
-          </button>
         </div>
-
-        {/* Sign Up Link */}
-        <p className="text-center text-text-muted text-sm font-light">
-          New here?{' '}
-          <Link to="/signup" className="text-gold font-medium">
-            Sign up
-          </Link>
-        </p>
       </div>
     </div>
   );

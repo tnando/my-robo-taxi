@@ -4,6 +4,10 @@
 
 MyRoboTaxi is a Tesla vehicle tracking web app (Next.js 14+, TypeScript, Tailwind CSS v4, Mapbox GL JS). The owner links their Tesla account and shares live vehicle status, location, and drive history with friends and family.
 
+### Authentication
+
+**Social-only auth** via NextAuth (Google + Apple). No email/password authentication. Account creation happens automatically on first OAuth sign-in. User profile (name, email, avatar) is pulled from the OAuth provider. No password hashing, email verification, or credential storage needed.
+
 ## Critical Documents (Read Before Writing Code)
 
 1. **Frontend Architecture:** `docs/design/frontend-architecture.md` — project structure, component design, feature modules, state management, testing strategy, code quality rules

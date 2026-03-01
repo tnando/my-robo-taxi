@@ -5,7 +5,6 @@
 
 // Components
 export { SignInForm } from './components/SignInForm';
-export { SignUpForm } from './components/SignUpForm';
 
 // Types
-export type { SignInFormData, SignUpFormData, AuthProvider } from './types';
+export type { AuthProvider } from './types';
