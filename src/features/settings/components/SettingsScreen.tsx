@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 
 import type { UserSettings } from '../types';
 
@@ -11,6 +10,8 @@ import { ToggleSwitch } from './ToggleSwitch';
 export interface SettingsScreenProps {
   /** User settings data. */
   settings: UserSettings;
+  /** Callback to sign the user out. */
+  onSignOut: () => void;
 }
 
 /** Notification toggle item shape. */
@@ -30,7 +31,7 @@ const NOTIFICATION_ITEMS: NotificationItem[] = [
  * Settings screen — profile info, Tesla link status, notification toggles, sign out.
  * Matches ui-mocks/src/pages/Settings.tsx pixel-for-pixel.
  */
-export function SettingsScreen({ settings }: SettingsScreenProps) {
+export function SettingsScreen({ settings, onSignOut }: SettingsScreenProps) {
   const [notifications, setNotifications] = useState(settings.notifications);
 
   const handleToggle = (key: keyof UserSettings['notifications']) => {
@@ -94,12 +95,13 @@ export function SettingsScreen({ settings }: SettingsScreenProps) {
 
       {/* Sign Out */}
       <div className="px-6 mb-6">
-        <Link
-          href="/signin"
+        <button
+          type="button"
+          onClick={onSignOut}
           className="text-text-muted text-sm font-light hover:text-text-secondary transition-colors"
         >
           Sign Out
-        </Link>
+        </button>
       </div>
 
       {/* Version */}

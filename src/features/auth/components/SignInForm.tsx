@@ -1,20 +1,19 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 import { Logo } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/Button';
 import { GoogleIcon, AppleIcon } from '@/components/ui/SocialIcons';
+import type { AuthProvider } from '../types';
 
 /**
  * Sign-in form with social auth buttons (Google + Apple only).
  * Matches the SignIn.tsx mock: centered layout, outline auth buttons, gold accent.
  */
 export function SignInForm() {
-  const router = useRouter();
-
-  const handleAuth = () => {
-    router.push('/');
+  const handleSignIn = (provider: AuthProvider) => {
+    signIn(provider, { callbackUrl: '/' });
   };
 
   return (
@@ -28,12 +27,14 @@ export function SignInForm() {
 
         {/* Auth buttons — outline style on dark bg */}
         <div className="space-y-3 mb-16">
-          <Button variant="social" icon={<GoogleIcon />} onClick={handleAuth}>
+          <Button variant="social" icon={<GoogleIcon />} onClick={() => handleSignIn('google')}>
             Continue with Google
           </Button>
-          <Button variant="social" icon={<AppleIcon />} onClick={handleAuth}>
-            Continue with Apple
-          </Button>
+          {process.env.NEXT_PUBLIC_APPLE_ENABLED === 'true' && (
+            <Button variant="social" icon={<AppleIcon />} onClick={() => handleSignIn('apple')}>
+              Continue with Apple
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -1,25 +1,29 @@
+'use client';
+
+import { useAuth } from '@/features/auth';
 import { SettingsScreen } from '@/features/settings';
 
 import type { UserSettings } from '@/features/settings';
 
-/** Mock settings for development — will be replaced with server data. */
-const MOCK_SETTINGS: UserSettings = {
-  name: 'Thomas Nandola',
-  email: 'thomas@example.com',
-  teslaLinked: true,
-  teslaVehicleName: "Thomas's Model Y",
-  notifications: {
-    driveStarted: true,
-    driveCompleted: true,
-    chargingComplete: false,
-    viewerJoined: true,
-  },
-};
-
 /**
  * Settings page — user preferences and Tesla account linking.
- * Fetches settings data and passes to SettingsScreen.
+ * Profile name/email come from the session; other settings are still mock.
  */
 export default function SettingsPage() {
-  return <SettingsScreen settings={MOCK_SETTINGS} />;
+  const { user, signOut } = useAuth();
+
+  const settings: UserSettings = {
+    name: user?.name ?? '',
+    email: user?.email ?? '',
+    teslaLinked: false,
+    teslaVehicleName: undefined,
+    notifications: {
+      driveStarted: true,
+      driveCompleted: true,
+      chargingComplete: false,
+      viewerJoined: true,
+    },
+  };
+
+  return <SettingsScreen settings={settings} onSignOut={signOut} />;
 }
