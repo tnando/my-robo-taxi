@@ -130,12 +130,20 @@ Commit after completing each logical unit of work. A logical unit is one of:
 
 Every PR **must** include screenshots of all affected screens committed to the repo.
 
+For behavioral changes (redirects, transitions, multi-step flows), also include **video demos** recorded with Playwright. Run `npm run record-demos` (requires `ffmpeg` — install via `brew install ffmpeg`). Videos are saved to `demos/` as `.mp4` files.
+
 ### Linking Media in PR Descriptions (Private Repo)
 
 Since this repo is private, relative paths and `raw.githubusercontent.com` URLs do NOT work in PR descriptions. Use full blob URLs with `?raw=true`:
 
 ```markdown
-![Sign In](https://github.com/tnando/my-robo-taxi/blob/<branch>/docs/screenshots/01-signin.png?raw=true)
+![Sign In](https://github.com/tnando/my-robo-taxi/blob/<branch>/screenshots/01-signin.png?raw=true)
+```
+
+For video demos, use the same pattern (GitHub renders `.mp4` inline):
+
+```markdown
+![Protected redirect](https://github.com/tnando/my-robo-taxi/blob/<branch>/demos/01-protected-redirect.gif?raw=true)
 ```
 
 The pattern is: `https://github.com/tnando/my-robo-taxi/blob/<branch>/<path>?raw=true`
