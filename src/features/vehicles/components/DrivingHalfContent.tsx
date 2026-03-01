@@ -71,7 +71,6 @@ export function DrivingHalfContent({ vehicle, currentDrive }: DrivingHalfContent
       </div>
 
       <p className="text-text-muted text-xs">Updated {vehicle.lastUpdated}</p>
-      <div className="h-20" />
     </div>
   );
 }

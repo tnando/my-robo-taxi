@@ -23,11 +23,22 @@ export interface UseBottomSheetReturn {
   toggle: () => void;
 }
 
+/** Options for the useBottomSheet hook. */
+export interface UseBottomSheetOptions {
+  /** Override the default peek height (defaults to SHEET_PEEK_HEIGHT). */
+  peekHeight?: number;
+}
+
 /**
  * Hook for bottom sheet touch-drag with snap-to-nearest logic.
- * Two states: peek (260px) and half (50vh). Snap to closest on release.
+ * Two states: peek (260px default) and half (50vh). Snap to closest on release.
  */
-export function useBottomSheet(initialState: SheetState = 'peek'): UseBottomSheetReturn {
+export function useBottomSheet(
+  initialState: SheetState = 'peek',
+  options?: UseBottomSheetOptions,
+): UseBottomSheetReturn {
+  const peekHeight = options?.peekHeight ?? SHEET_PEEK_HEIGHT;
+
   const [sheetState, setSheetState] = useState<SheetState>(initialState);
   const [sheetOffset, setSheetOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -40,9 +51,9 @@ export function useBottomSheet(initialState: SheetState = 'peek'): UseBottomShee
     : 400;
 
   const heights = useMemo<Record<SheetState, number>>(() => ({
-    peek: SHEET_PEEK_HEIGHT,
+    peek: peekHeight,
     half: halfHeight,
-  }), [halfHeight]);
+  }), [peekHeight, halfHeight]);
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     dragStartY.current = e.touches[0].clientY;

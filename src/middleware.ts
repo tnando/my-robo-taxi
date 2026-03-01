@@ -22,8 +22,11 @@ export async function middleware(req: NextRequest) {
   }
 
   // Unauthenticated user on protected route → redirect to sign-in
+  // Preserve original URL as callbackUrl so user returns after auth
   if (!isPublicPath(pathname) && !token) {
-    return NextResponse.redirect(new URL('/signin', req.url));
+    const signInUrl = new URL('/signin', req.url);
+    signInUrl.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(signInUrl);
   }
 
   return NextResponse.next();

@@ -37,3 +37,6 @@ next-env.d.ts
 
 # video demos (keep only converted .mp4 files)
 demos/*.webm
+
+# playwright auth session (contains tokens)
+.playwright-auth.json

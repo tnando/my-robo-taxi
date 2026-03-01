@@ -126,6 +126,9 @@ export function HomeScreen({ vehicles, drives }: HomeScreenProps) {
             <ParkedHalfContent vehicle={vehicle} />
           )
         )}
+
+        {/* Spacer for BottomNav overlap */}
+        <div className="h-20" />
       </BottomSheet>
     </div>
   );

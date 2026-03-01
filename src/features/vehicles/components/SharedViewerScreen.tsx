@@ -1,17 +1,18 @@
 'use client';
 
-import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 
 import type { Vehicle } from '@/types/vehicle';
+import type { Drive } from '@/types/drive';
 
-import {
-  getStatusMessage,
-  STATUS_CONFIG,
-  getBatteryColor,
-  getBatteryTextColor,
-} from '@/lib/vehicle-helpers';
+import { BottomSheet, shouldShowHalfContent } from '@/components/layout/BottomSheet';
+import { SHARED_SHEET_PEEK_HEIGHT } from '@/lib/constants';
+
+import { useBottomSheet } from '../hooks/use-bottom-sheet';
+import { DrivingPeekContent } from './DrivingPeekContent';
+import { ParkedPeekContent } from './ParkedPeekContent';
+import { DrivingHalfContent } from './DrivingHalfContent';
+import { ParkedHalfContent } from './ParkedHalfContent';
 
 // Dynamic import — Mapbox depends on window/document
 const VehicleMap = dynamic(
@@ -25,119 +26,82 @@ export interface SharedViewerScreenProps {
   vehicle: Vehicle;
   /** The owner name to show in the banner. */
   ownerName: string;
+  /** Current drive for driving content (trip progress, destinations). */
+  currentDrive?: Drive;
 }
 
 /**
- * Anonymous shared viewer screen — simplified map with bottom sheet.
- * Shows vehicle status, speed, battery, and a sign-up nudge in half state.
- * Matches ui-mocks/src/pages/SharedViewer.tsx.
+ * Authenticated shared viewer screen — full-screen map with bottom sheet.
+ * Reuses the same BottomSheet, drag/snap, and peek/half content as HomeScreen.
+ * Scoped to a single vehicle with no vehicle switching or bottom nav.
  */
-export function SharedViewerScreen({ vehicle, ownerName }: SharedViewerScreenProps) {
-  const [sheetState, setSheetState] = useState<'peek' | 'half'>('peek');
-  const config = STATUS_CONFIG[vehicle.status];
+export function SharedViewerScreen({ vehicle, ownerName, currentDrive }: SharedViewerScreenProps) {
+  const sheet = useBottomSheet('peek', { peekHeight: SHARED_SHEET_PEEK_HEIGHT });
 
-  const sheetHeights: Record<'peek' | 'half', string> = {
-    peek: 'h-[180px]',
-    half: 'h-[340px]',
-  };
+  const isDriving = vehicle.status === 'driving';
+  const routePoints = currentDrive?.routePoints;
+
+  // Trip progress (0-1)
+  const tripProgress =
+    vehicle.tripDistanceMiles && vehicle.tripDistanceRemaining != null
+      ? (vehicle.tripDistanceMiles - vehicle.tripDistanceRemaining) / vehicle.tripDistanceMiles
+      : 0;
+
+  const showHalf = shouldShowHalfContent(sheet.sheetState, sheet.isDragging, sheet.currentHeight);
 
   return (
     <div className="h-screen bg-bg-primary relative overflow-hidden">
-      {/* Full-bleed map */}
+      {/* Full-screen map */}
       <div className="absolute inset-0">
         <VehicleMap
           showVehicleMarker
+          showRoute={isDriving}
+          routeCoordinates={routePoints}
+          vehiclePosition={isDriving ? [vehicle.longitude, vehicle.latitude] : undefined}
           heading={vehicle.heading}
           center={[vehicle.longitude, vehicle.latitude]}
+          zoom={12}
+          fitButtonBottom={sheet.currentHeight + 16}
         >
           {/* Top banner */}
           <SharedViewerBanner ownerName={ownerName} vehicleName={vehicle.model} />
 
-          {/* Sheet state toggle (for demo) */}
-          <div className="absolute top-28 left-1/2 -translate-x-1/2 z-30 flex gap-1 bg-bg-primary/60 backdrop-blur-md rounded-full p-1">
-            {(['peek', 'half'] as const).map((state) => (
-              <button
-                key={state}
-                onClick={() => setSheetState(state)}
-                className={`px-3 py-1 rounded-full text-[10px] font-medium transition-colors ${
-                  sheetState === state
-                    ? 'bg-gold text-bg-primary'
-                    : 'text-text-muted'
-                }`}
-              >
-                {state}
-              </button>
-            ))}
-          </div>
+          {/* Compass labels */}
+          <CompassLabels sheetHeight={sheet.currentHeight} />
         </VehicleMap>
       </div>
 
-      {/* Simplified bottom sheet */}
-      <div
-        className={`absolute bottom-0 left-0 right-0 z-40 bg-bg-secondary/95 backdrop-blur-2xl rounded-t-[24px] border-t border-border-default transition-all duration-300 ease-out ${sheetHeights[sheetState]}`}
+      {/* Bottom Sheet */}
+      <BottomSheet
+        height={sheet.currentHeight}
+        isDragging={sheet.isDragging}
+        sheetState={sheet.sheetState}
+        onTouchStart={sheet.onTouchStart}
+        onTouchMove={sheet.onTouchMove}
+        onTouchEnd={sheet.onTouchEnd}
+        onToggle={sheet.toggle}
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-4">
-          <div className="w-9 h-1 rounded-full bg-bg-elevated" />
-        </div>
-
-        <div className="px-6">
-          {/* Vehicle name + status */}
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-text-primary">{vehicle.name}</h2>
-            <span className="text-xs font-medium" style={{ color: config.color }}>
-              {config.label}
-            </span>
-          </div>
-
-          {/* Status message */}
-          <p className="text-text-secondary text-sm font-light mb-4">
-            {getStatusMessage(vehicle)}
-          </p>
-
-          {/* Speed + Battery */}
-          <div className="flex items-center justify-between">
-            {vehicle.status === 'driving' ? (
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-light tabular-nums text-text-primary">
-                  {vehicle.speed}
-                </span>
-                <span className="text-sm text-text-muted font-light">mph</span>
-              </div>
-            ) : (
-              <div />
-            )}
-
-            <div className="flex items-center gap-2">
-              <span className={`text-sm font-medium tabular-nums ${getBatteryTextColor(vehicle.chargeLevel, vehicle.status)}`}>
-                {vehicle.chargeLevel}%
-              </span>
-              <div className="w-14 h-1.5 bg-bg-elevated rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${getBatteryColor(vehicle.chargeLevel, vehicle.status)}`}
-                  style={{ width: `${vehicle.chargeLevel}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Half state — sign up nudge */}
-        {sheetState === 'half' && (
-          <div className="px-6 mt-8 animate-fade-in">
-            <div className="h-px bg-border-default mb-8" />
-            <p className="text-text-muted text-xs font-light mb-5">
-              Sign up for more features including drive history and notifications.
-            </p>
-            <Link
-              href="/signup"
-              className="inline-block text-gold text-sm font-medium hover:text-gold-light transition-colors"
-            >
-              Sign up for more &rarr;
-            </Link>
-          </div>
+        {/* Peek content */}
+        {isDriving ? (
+          <DrivingPeekContent
+            vehicle={vehicle}
+            currentDrive={currentDrive}
+            tripProgress={tripProgress}
+          />
+        ) : (
+          <ParkedPeekContent vehicle={vehicle} />
         )}
-      </div>
+
+        {/* Half content */}
+        {showHalf && (
+          isDriving ? (
+            <DrivingHalfContent vehicle={vehicle} currentDrive={currentDrive} />
+          ) : (
+            <ParkedHalfContent vehicle={vehicle} />
+          )
+        )}
+
+      </BottomSheet>
     </div>
   );
 }
@@ -152,8 +116,8 @@ function SharedViewerBanner({
 }) {
   return (
     <div className="absolute top-0 left-0 right-0 z-20">
-      <div className="bg-bg-primary/80 backdrop-blur-md px-6 pt-14 pb-4">
-        <div className="flex items-center gap-2">
+      <div className="bg-bg-primary/60 backdrop-blur-md px-6 py-8">
+        <div className="flex items-center justify-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-gold" />
           <p className="text-text-secondary text-sm font-light">
             Watching <span className="text-gold font-medium">{ownerName}&apos;s {vehicleName}</span>
@@ -161,5 +125,28 @@ function SharedViewerBanner({
         </div>
       </div>
     </div>
+  );
+}
+
+/** Subtle compass direction labels overlaying the map. */
+function CompassLabels({ sheetHeight }: { sheetHeight: number }) {
+  return (
+    <>
+      <div className="absolute top-14 left-1/2 -translate-x-1/2 z-10 text-[10px] text-white/30 font-light select-none pointer-events-none">
+        N
+      </div>
+      <div
+        className="absolute left-1/2 -translate-x-1/2 z-10 text-[10px] text-white/30 font-light select-none pointer-events-none"
+        style={{ bottom: `${sheetHeight + 8}px` }}
+      >
+        S
+      </div>
+      <div className="absolute top-1/2 right-3 -translate-y-1/2 z-10 text-[10px] text-white/30 font-light select-none pointer-events-none">
+        E
+      </div>
+      <div className="absolute top-1/2 left-3 -translate-y-1/2 z-10 text-[10px] text-white/30 font-light select-none pointer-events-none">
+        W
+      </div>
+    </>
   );
 }

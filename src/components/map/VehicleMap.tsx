@@ -27,6 +27,8 @@ export interface VehicleMapProps {
   zoom?: number;
   /** Whether map is interactive (pan/zoom). */
   interactive?: boolean;
+  /** Bottom offset for the fit-to-route button (pixels). Defaults to 310. */
+  fitButtonBottom?: number;
   /** Children rendered as overlays on the map. */
   children?: React.ReactNode;
 }
@@ -48,6 +50,7 @@ export function VehicleMap({
   heading = 0,
   center = MAPBOX_DEFAULT_CENTER,
   zoom = MAPBOX_DEFAULT_ZOOM,
+  fitButtonBottom = 310,
   interactive = true,
   children,
 }: VehicleMapProps) {
@@ -66,7 +69,7 @@ export function VehicleMap({
     <div className="absolute inset-0" role="img" aria-label="Vehicle map">
       <div ref={mapContainer} className="absolute inset-0 w-full h-full" aria-hidden="true" />
 
-      {showFitButton && <FitRouteButton onClick={fitToRoute} />}
+      {showFitButton && <FitRouteButton onClick={fitToRoute} bottom={fitButtonBottom} />}
 
       {children}
     </div>
@@ -74,13 +77,13 @@ export function VehicleMap({
 }
 
 /** Fit-to-route floating button. */
-function FitRouteButton({ onClick }: { onClick: () => void }) {
+function FitRouteButton({ onClick, bottom }: { onClick: () => void; bottom: number }) {
   return (
     <button
       onClick={onClick}
       className="absolute z-30 w-10 h-10 rounded-[10px] flex items-center justify-center cursor-pointer"
       style={{
-        bottom: 310,
+        bottom,
         right: 16,
         background: 'rgba(30,30,30,0.85)',
         backdropFilter: 'blur(8px)',

@@ -1,31 +1,63 @@
 import { chromium } from 'playwright';
-import { mkdirSync, rmSync } from 'fs';
+import { mkdirSync, rmSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
 
 const BASE = 'http://localhost:3000';
 const OUT = './demos';
+const AUTH_FILE = '.playwright-auth.json';
 mkdirSync(OUT, { recursive: true });
 
+/**
+ * Each demo has:
+ * - name: output filename (without extension)
+ * - description: logged to console
+ * - authenticated: false = no session (redirect demos), true = uses saved session
+ * - steps: async function that drives the page
+ */
 const demos = [
   {
     name: '01-protected-redirect',
     description: 'Visit / while signed out → redirects to /signin',
+    authenticated: false,
     steps: async (page) => {
-      await page.goto(`${BASE}/`, { waitUntil: 'networkidle', timeout: 15000 });
-      await page.waitForURL('**/signin', { timeout: 10000 });
-      // Wait for sign-in page content to render
-      await page.waitForSelector('button', { timeout: 5000 });
+      await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      await page.waitForSelector('button', { timeout: 10000 });
       await page.waitForTimeout(2000);
     },
   },
   {
-    name: '02-shared-route-redirect',
-    description: 'Visit /shared/demo-token while signed out → redirects to /signin',
+    name: '02-shared-redirect-with-callback',
+    description: 'Visit /shared/demo-token signed out → redirects to /signin?callbackUrl=/shared/demo-token',
+    authenticated: false,
     steps: async (page) => {
-      await page.goto(`${BASE}/shared/demo-token`, { waitUntil: 'networkidle', timeout: 15000 });
-      await page.waitForURL('**/signin', { timeout: 10000 });
-      await page.waitForSelector('button', { timeout: 5000 });
+      await page.goto(`${BASE}/shared/demo-token`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      await page.waitForSelector('button', { timeout: 10000 });
       await page.waitForTimeout(2000);
+    },
+  },
+  {
+    name: '03-shared-viewer-peek',
+    description: 'Shared viewer — authenticated peek state with bottom sheet',
+    authenticated: true,
+    steps: async (page) => {
+      await page.goto(`${BASE}/shared/test-token`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      // Wait for map + bottom sheet to render
+      await page.waitForSelector('[aria-label="Vehicle details"]', { timeout: 10000 });
+      await page.waitForTimeout(3000);
+    },
+  },
+  {
+    name: '04-shared-viewer-drag',
+    description: 'Shared viewer — drag bottom sheet from peek to half',
+    authenticated: true,
+    steps: async (page) => {
+      await page.goto(`${BASE}/shared/test-token`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      await page.waitForSelector('[aria-label="Vehicle details"]', { timeout: 10000 });
+      await page.waitForTimeout(2000);
+      // Click the drag handle to toggle to half state
+      const handle = page.getByRole('separator', { name: 'Toggle vehicle details' });
+      await handle.click();
+      await page.waitForTimeout(2500);
     },
   },
 ];
@@ -40,12 +72,16 @@ function webmToGif(webmPath, gifPath) {
 
 async function recordDemo(browser, demo) {
   console.log(`Recording: ${demo.name} — ${demo.description}`);
-  const ctx = await browser.newContext({
+  const ctxOptions = {
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
     colorScheme: 'dark',
     recordVideo: { dir: OUT, size: { width: 390, height: 844 } },
-  });
+  };
+  if (demo.authenticated && existsSync(AUTH_FILE)) {
+    ctxOptions.storageState = AUTH_FILE;
+  }
+  const ctx = await browser.newContext(ctxOptions);
 
   const page = await ctx.newPage();
   try {
@@ -69,12 +105,22 @@ async function recordDemo(browser, demo) {
 }
 
 async function run() {
+  const hasAuth = existsSync(AUTH_FILE);
+  if (!hasAuth) {
+    console.log('Warning: No auth session found — authenticated demos will be skipped');
+    console.log('Run `node scripts/save-auth.mjs` to create one\n');
+  }
+
   const browser = await chromium.launch({
     headless: true,
     args: ['--use-gl=angle', '--use-angle=swiftshader'],
   });
 
   for (const demo of demos) {
+    if (demo.authenticated && !hasAuth) {
+      console.log(`Skipping: ${demo.name} (requires auth)`);
+      continue;
+    }
     await recordDemo(browser, demo);
   }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 
 import { Logo } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/Button';
@@ -10,10 +11,14 @@ import type { AuthProvider } from '../types';
 /**
  * Sign-in form with social auth buttons (Google + Apple only).
  * Matches the SignIn.tsx mock: centered layout, outline auth buttons, gold accent.
+ * Reads callbackUrl from search params to redirect after auth (e.g. shared viewer links).
  */
 export function SignInForm() {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') ?? '/';
+
   const handleSignIn = (provider: AuthProvider) => {
-    signIn(provider, { callbackUrl: '/' });
+    signIn(provider, { callbackUrl });
   };
 
   return (

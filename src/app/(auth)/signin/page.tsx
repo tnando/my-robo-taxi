@@ -1,9 +1,15 @@
+import { Suspense } from 'react';
+
 import { SignInForm } from '@/features/auth';
 
 /**
  * Sign-in page — minimal dark auth screen.
- * Renders the SignInForm feature component.
+ * Suspense boundary required because SignInForm reads searchParams (callbackUrl).
  */
 export default function SignInPage() {
-  return <SignInForm />;
+  return (
+    <Suspense>
+      <SignInForm />
+    </Suspense>
+  );
 }
