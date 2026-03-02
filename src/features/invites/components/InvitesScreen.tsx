@@ -11,13 +11,17 @@ import { PendingInviteCard } from './PendingInviteCard';
 export interface InvitesScreenProps {
   /** All invites (active + pending). */
   invites: Invite[];
+  /** Callback to revoke an invite by ID. */
+  onRevoke?: (id: string) => void;
+  /** Callback to resend an invite by ID. */
+  onResend?: (id: string) => void;
 }
 
 /**
  * Invite management screen — email input, active viewer list, pending invite list.
  * Matches ui-mocks/src/pages/Invites.tsx pixel-for-pixel.
  */
-export function InvitesScreen({ invites }: InvitesScreenProps) {
+export function InvitesScreen({ invites, onRevoke, onResend }: InvitesScreenProps) {
   const [emailInput, setEmailInput] = useState('');
 
   const activeViewers = invites.filter((i) => i.status === 'accepted');
@@ -59,7 +63,7 @@ export function InvitesScreen({ invites }: InvitesScreenProps) {
         ) : (
           <div className="space-y-4">
             {activeViewers.map((invite) => (
-              <ViewerCard key={invite.id} invite={invite} />
+              <ViewerCard key={invite.id} invite={invite} onRevoke={onRevoke} />
             ))}
           </div>
         )}
@@ -74,7 +78,12 @@ export function InvitesScreen({ invites }: InvitesScreenProps) {
 
           <div className="space-y-4">
             {pendingInvites.map((invite) => (
-              <PendingInviteCard key={invite.id} invite={invite} />
+              <PendingInviteCard
+                key={invite.id}
+                invite={invite}
+                onResend={onResend}
+                onCancel={onRevoke}
+              />
             ))}
           </div>
         </div>

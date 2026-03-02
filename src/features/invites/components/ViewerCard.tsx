@@ -4,12 +4,14 @@ import type { Invite } from '@/types/invite';
 export interface ViewerCardProps {
   /** The accepted invite to display. */
   invite: Invite;
+  /** Callback to revoke this invite. */
+  onRevoke?: (id: string) => void;
 }
 
 /**
  * Single active viewer row — avatar with online dot, name, permission, last seen, revoke action.
  */
-export function ViewerCard({ invite }: ViewerCardProps) {
+export function ViewerCard({ invite, onRevoke }: ViewerCardProps) {
   return (
     <div className="flex items-center gap-4">
       {/* Avatar */}
@@ -44,6 +46,7 @@ export function ViewerCard({ invite }: ViewerCardProps) {
       <button
         className="text-text-muted text-xs hover:text-text-secondary transition-colors"
         aria-label={`Revoke access for ${invite.label}`}
+        onClick={() => onRevoke?.(invite.id)}
       >
         Revoke
       </button>

@@ -4,12 +4,16 @@ import type { Invite } from '@/types/invite';
 export interface PendingInviteCardProps {
   /** The pending invite to display. */
   invite: Invite;
+  /** Callback to resend this invite. */
+  onResend?: (id: string) => void;
+  /** Callback to cancel (revoke) this invite. */
+  onCancel?: (id: string) => void;
 }
 
 /**
  * Single pending invite row — avatar initial, name, email, resend/cancel actions.
  */
-export function PendingInviteCard({ invite }: PendingInviteCardProps) {
+export function PendingInviteCard({ invite, onResend, onCancel }: PendingInviteCardProps) {
   return (
     <div className="flex items-center gap-4">
       {/* Avatar */}
@@ -30,12 +34,14 @@ export function PendingInviteCard({ invite }: PendingInviteCardProps) {
         <button
           className="text-text-muted text-xs hover:text-text-secondary transition-colors"
           aria-label={`Resend invite to ${invite.label}`}
+          onClick={() => onResend?.(invite.id)}
         >
           Resend
         </button>
         <button
           className="text-text-muted text-xs hover:text-text-secondary transition-colors"
           aria-label={`Cancel invite for ${invite.label}`}
+          onClick={() => onCancel?.(invite.id)}
         >
           Cancel
         </button>

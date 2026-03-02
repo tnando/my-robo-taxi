@@ -1,10 +1,22 @@
-import { InvitesScreen } from '@/features/invites';
-import { MOCK_INVITES } from '@/lib/mock-data';
+import {
+  InvitesScreen,
+  getInvites,
+  revokeInvite,
+  resendInvite,
+} from '@/features/invites';
 
 /**
  * Invites page — invite management screen.
  * Fetches invite data and passes to InvitesScreen.
  */
-export default function InvitesPage() {
-  return <InvitesScreen invites={MOCK_INVITES} />;
+export default async function InvitesPage() {
+  const invites = await getInvites();
+
+  return (
+    <InvitesScreen
+      invites={invites}
+      onRevoke={revokeInvite}
+      onResend={resendInvite}
+    />
+  );
 }
