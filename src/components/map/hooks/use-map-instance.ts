@@ -11,7 +11,7 @@ mapboxgl.accessToken = MAPBOX_TOKEN;
 /** Return type of the useMapInstance hook. */
 export interface UseMapInstanceReturn {
   /** Ref to attach to the map container div. */
-  mapContainer: React.RefObject<HTMLDivElement>;
+  mapContainer: React.RefObject<HTMLDivElement | null>;
   /** The Mapbox map instance (null before initialization). */
   map: React.RefObject<mapboxgl.Map | null>;
   /** Whether the map has finished loading — MUST be useState for effect deps. */

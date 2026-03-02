@@ -3,15 +3,16 @@ import { MOCK_DRIVES } from '@/lib/mock-data';
 
 /** Props passed by Next.js for dynamic route segments. */
 interface DriveSummaryPageProps {
-  params: { driveId: string };
+  params: Promise<{ driveId: string }>;
 }
 
 /**
  * Drive summary page — detailed view of a single drive.
  * Fetches drive by ID and passes to DriveSummaryScreen.
  */
-export default function DriveSummaryPage({ params }: DriveSummaryPageProps) {
-  const drive = MOCK_DRIVES.find((d) => d.id === params.driveId) ?? MOCK_DRIVES[0];
+export default async function DriveSummaryPage({ params }: DriveSummaryPageProps) {
+  const { driveId } = await params;
+  const drive = MOCK_DRIVES.find((d) => d.id === driveId) ?? MOCK_DRIVES[0];
 
   return <DriveSummaryScreen drive={drive} />;
 }
