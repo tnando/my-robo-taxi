@@ -114,9 +114,18 @@ Commit after completing each logical unit of work. A logical unit is one of:
 5. A test file covering a component or hook
 6. A configuration change (Tailwind config, ESLint, tsconfig)
 
+### Pre-Commit Verification (All Must Pass)
+
+Run these checks before every commit:
+1. **`npm run typecheck`** — TypeScript must compile with no errors.
+2. **`npm test`** — All Vitest unit tests must pass.
+3. **`npm run test:e2e`** — All Playwright E2E tests must pass (once set up via issue #18).
+4. **`npm run build`** — Production build must succeed.
+5. **Dev server smoke test** — Run `npm run dev`, open `localhost:3000`, and verify no runtime errors in the terminal output or browser console.
+6. **Never push directly to `main`** — always use a feature branch and PR.
+
 ### Commit Rules
 
-- **Build must pass before committing.** Run `npm run build` (or `next build`) to verify.
 - **No broken imports.** Every import must resolve.
 - **Commit message format:** Start with a verb in imperative mood. Examples:
   - `Add TripProgressBar component with stop markers and gold glow animation`
