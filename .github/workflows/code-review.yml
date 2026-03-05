@@ -34,7 +34,7 @@ jobs:
           track_progress: true
           show_full_output: true
           claude_args: |
-            --max-turns 15
+            --max-turns 50
             --model claude-sonnet-4-6
           prompt: |
             You are the principal engineer reviewing PRs for the MyRoboTaxi project — a Tesla
