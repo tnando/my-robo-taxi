@@ -110,3 +110,18 @@ jobs:
             Leave inline comments on specific lines where you find issues. Be precise —
             reference the exact file and line. Praise good patterns you see. Be direct
             but respectful.
+
+            ## Submitting Your Review (MANDATORY)
+
+            After writing your review comment, you MUST submit a formal PR review using
+            the `gh` CLI. This is required so the PR can be merged.
+
+            - If verdict is APPROVE:
+              `gh pr review $PR_NUMBER --approve -b "Approved: <one-line rationale>"`
+            - If verdict is REQUEST_CHANGES:
+              `gh pr review $PR_NUMBER --request-changes -b "Changes requested: <one-line rationale>"`
+            - If verdict is COMMENT:
+              `gh pr review $PR_NUMBER --comment -b "Review complete: <one-line rationale>"`
+
+            The PR number is available from the GitHub event context. Always submit the
+            formal review — do not skip this step.
