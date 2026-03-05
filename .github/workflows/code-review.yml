@@ -116,7 +116,7 @@ jobs:
       - name: Submit PR review
         if: github.event_name == 'pull_request'
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           # Read Claude's comment to determine the verdict
