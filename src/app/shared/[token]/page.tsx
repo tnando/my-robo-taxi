@@ -1,14 +1,26 @@
-import { SharedViewerScreen } from '@/features/vehicles';
-import { MOCK_VEHICLES, MOCK_DRIVES } from '@/lib/mock-data';
+import { notFound } from 'next/navigation';
+
+import { SharedViewerScreen, getVehicles } from '@/features/vehicles';
+import { MOCK_DRIVES } from '@/lib/mock-data';
+
+interface SharedViewerPageProps {
+  params: Promise<{ token: string }>;
+}
 
 /**
  * Shared viewer page — authenticated live view for invited viewers.
  * No bottom nav, single vehicle with full bottom sheet experience.
- * Token param will be used to look up the shared vehicle in production.
+ * TODO: Use token to resolve a specific shared vehicle via invite lookup.
+ * For now, fetches the first vehicle for the authenticated user.
  */
-export default function SharedViewerPage() {
-  // In production, token from params would resolve to a vehicle
-  const vehicle = MOCK_VEHICLES[0];
+export default async function SharedViewerPage({ params }: SharedViewerPageProps) {
+  const { token: _token } = await params;
+  const vehicles = await getVehicles();
+  const vehicle = vehicles[0];
+
+  if (!vehicle) {
+    notFound();
+  }
 
   // Find the active drive matching the vehicle's destination (when driving)
   const currentDrive = MOCK_DRIVES.find(
