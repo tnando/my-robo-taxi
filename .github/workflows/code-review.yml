@@ -119,10 +119,10 @@ jobs:
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
 
-          # Read Claude's comment to determine the verdict
+          # Read Claude's review comment (the one containing a Verdict)
           COMMENT=$(GH_TOKEN=${{ secrets.GH_PAT }} gh pr view "$PR_NUMBER" \
             --json comments \
-            --jq '[.comments[] | select(.author.login == "claude" or .author.login == "github-actions")] | last | .body')
+            --jq '[.comments[] | select((.author.login == "claude" or .author.login == "github-actions") and (.body | test("Verdict")))] | last | .body')
 
           echo "Verdict line:"
           echo "$COMMENT" | grep -i "Verdict" || echo "(no verdict found)"
