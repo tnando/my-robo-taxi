@@ -8,7 +8,7 @@ import { MOCK_VEHICLES } from '@/lib/mock-data';
  */
 export default async function DrivesPage() {
   const vehicle = MOCK_VEHICLES[0];
-  const drives = await getDrives(vehicle.id);
+  const drives = await getDrives();
 
   return <DriveHistoryScreen vehicle={vehicle} drives={drives} />;
 }

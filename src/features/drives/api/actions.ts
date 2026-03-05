@@ -1,5 +1,8 @@
 'use server';
 
+import { Prisma } from '@prisma/client';
+import type { Drive as PrismaDrive } from '@prisma/client';
+
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import type { Drive, DriveSortBy, LngLat } from '@/types/drive';
@@ -8,50 +11,8 @@ import type { Drive, DriveSortBy, LngLat } from '@/types/drive';
  * Map a Prisma Drive record to the shared Drive interface.
  * `routePoints` is stored as Json in Prisma — cast to LngLat[].
  */
-function mapDrive(record: {
-  id: string;
-  vehicleId: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  startLocation: string;
-  startAddress: string;
-  endLocation: string;
-  endAddress: string;
-  distanceMiles: number;
-  durationMinutes: number;
-  avgSpeedMph: number;
-  maxSpeedMph: number;
-  energyUsedKwh: number;
-  startChargeLevel: number;
-  endChargeLevel: number;
-  fsdMiles: number;
-  fsdPercentage: number;
-  interventions: number;
-  routePoints: unknown;
-}): Drive {
-  return {
-    id: record.id,
-    vehicleId: record.vehicleId,
-    date: record.date,
-    startTime: record.startTime,
-    endTime: record.endTime,
-    startLocation: record.startLocation,
-    startAddress: record.startAddress,
-    endLocation: record.endLocation,
-    endAddress: record.endAddress,
-    distanceMiles: record.distanceMiles,
-    durationMinutes: record.durationMinutes,
-    avgSpeedMph: record.avgSpeedMph,
-    maxSpeedMph: record.maxSpeedMph,
-    energyUsedKwh: record.energyUsedKwh,
-    startChargeLevel: record.startChargeLevel,
-    endChargeLevel: record.endChargeLevel,
-    fsdMiles: record.fsdMiles,
-    fsdPercentage: record.fsdPercentage,
-    interventions: record.interventions,
-    routePoints: record.routePoints as LngLat[],
-  };
+function mapDrive({ createdAt, routePoints, ...rest }: PrismaDrive): Drive {
+  return { ...rest, routePoints: routePoints as LngLat[] };
 }
 
 /** Prisma orderBy clause for a given sort option. */
@@ -78,7 +39,7 @@ export async function getDrives(
   const session = await auth();
   if (!session?.user?.id) return [];
 
-  const where: Record<string, unknown> = {
+  const where: Prisma.DriveWhereInput = {
     vehicle: { userId: session.user.id },
   };
 
