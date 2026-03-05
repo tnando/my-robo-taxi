@@ -1,5 +1,7 @@
 'use server';
 
+import { Prisma } from '@prisma/client';
+
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import type { Vehicle, TripStop, VehicleStatus } from '@/types/vehicle';
@@ -10,7 +12,7 @@ import type { Vehicle, TripStop, VehicleStatus } from '@/types/vehicle';
 function formatRelativeTime(date: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
-  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
 
   if (diffSeconds < 60) {
     return `${diffSeconds}s ago`;
@@ -30,43 +32,21 @@ function formatRelativeTime(date: Date): string {
   return `${diffDays}d ago`;
 }
 
-/** Shape of a TripStop row from Prisma (excluding relation fields). */
-interface PrismaTripStop {
-  id: string;
-  vehicleId: string;
-  name: string;
-  address: string;
-  type: 'charging' | 'waypoint';
-}
+type PrismaVehicleWithStops = Prisma.VehicleGetPayload<{ include: { stops: true } }>;
 
-/** Shape of a Vehicle row from Prisma with included stops. */
-interface PrismaVehicleWithStops {
-  id: string;
-  name: string;
-  model: string;
-  year: number;
-  color: string;
-  licensePlate: string;
-  chargeLevel: number;
-  estimatedRange: number;
-  status: string;
-  speed: number;
-  heading: number;
-  locationName: string;
-  locationAddress: string;
-  latitude: number;
-  longitude: number;
-  interiorTemp: number;
-  exteriorTemp: number;
-  odometerMiles: number;
-  fsdMilesToday: number;
-  destinationName: string | null;
-  destinationAddress: string | null;
-  etaMinutes: number | null;
-  tripDistanceMiles: number | null;
-  tripDistanceRemaining: number | null;
-  lastUpdated: Date;
-  stops: PrismaTripStop[];
+const VEHICLE_STATUS_MAP: Record<string, VehicleStatus> = {
+  driving: 'driving',
+  parked: 'parked',
+  charging: 'charging',
+  offline: 'offline',
+};
+
+function toVehicleStatus(prismaStatus: string): VehicleStatus {
+  const status = VEHICLE_STATUS_MAP[prismaStatus];
+  if (!status) {
+    throw new Error(`Unknown vehicle status: ${prismaStatus}`);
+  }
+  return status;
 }
 
 /**
@@ -88,7 +68,7 @@ function mapPrismaVehicleToVehicle(prismaVehicle: PrismaVehicleWithStops): Vehic
     licensePlate: prismaVehicle.licensePlate,
     chargeLevel: prismaVehicle.chargeLevel,
     estimatedRange: prismaVehicle.estimatedRange,
-    status: prismaVehicle.status as VehicleStatus,
+    status: toVehicleStatus(prismaVehicle.status),
     speed: prismaVehicle.speed,
     heading: prismaVehicle.heading,
     locationName: prismaVehicle.locationName,

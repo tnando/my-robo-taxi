@@ -3,13 +3,18 @@ import { notFound } from 'next/navigation';
 import { SharedViewerScreen, getVehicles } from '@/features/vehicles';
 import { MOCK_DRIVES } from '@/lib/mock-data';
 
+interface SharedViewerPageProps {
+  params: Promise<{ token: string }>;
+}
+
 /**
  * Shared viewer page — authenticated live view for invited viewers.
  * No bottom nav, single vehicle with full bottom sheet experience.
- * TODO: Token param should resolve to a specific shared vehicle via invite lookup.
+ * TODO: Use token to resolve a specific shared vehicle via invite lookup.
  * For now, fetches the first vehicle for the authenticated user.
  */
-export default async function SharedViewerPage() {
+export default async function SharedViewerPage({ params }: SharedViewerPageProps) {
+  const { token: _token } = await params;
   const vehicles = await getVehicles();
   const vehicle = vehicles[0];
 
