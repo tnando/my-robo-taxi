@@ -115,25 +115,28 @@ jobs:
 
       - name: Submit PR review
         if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+
           # Read Claude's comment to determine the verdict
-          COMMENT=$(gh pr view ${{ github.event.pull_request.number }} \
+          COMMENT=$(GH_TOKEN=${{ secrets.GH_PAT }} gh pr view "$PR_NUMBER" \
             --json comments \
             --jq '[.comments[] | select(.author.login == "claude" or .author.login == "github-actions")] | last | .body')
 
-          if echo "$COMMENT" | grep -qi "**Verdict**.*APPROVE"; then
+          echo "Verdict line:"
+          echo "$COMMENT" | grep -i "Verdict" || echo "(no verdict found)"
+
+          if echo "$COMMENT" | grep -qi 'Verdict.*APPROVE'; then
             echo "Submitting approval"
-            gh pr review ${{ github.event.pull_request.number }} --approve \
+            GH_TOKEN=${{ secrets.GH_PAT }} gh pr review "$PR_NUMBER" --approve \
               -b "Automated approval based on Claude Code review."
-          elif echo "$COMMENT" | grep -qi "**Verdict**.*REQUEST_CHANGES"; then
+          elif echo "$COMMENT" | grep -qi 'Verdict.*REQUEST_CHANGES'; then
             echo "Submitting request for changes"
-            gh pr review ${{ github.event.pull_request.number }} --request-changes \
+            GH_TOKEN=${{ secrets.GH_PAT }} gh pr review "$PR_NUMBER" --request-changes \
               -b "Changes requested based on Claude Code review."
           else
             echo "Submitting comment review"
-            gh pr review ${{ github.event.pull_request.number }} --comment \
+            GH_TOKEN=${{ secrets.GH_PAT }} gh pr review "$PR_NUMBER" --comment \
               -b "Review complete — see Claude's comment for details."
           fi
