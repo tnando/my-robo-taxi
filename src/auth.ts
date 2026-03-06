@@ -77,6 +77,16 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           create: { userId, teslaLinked: true },
           update: { teslaLinked: true },
         });
+
+        // Trigger initial vehicle sync (failure does not block OAuth redirect)
+        try {
+          const { syncVehiclesFromTesla } = await import(
+            '@/features/vehicles/api/sync'
+          );
+          await syncVehiclesFromTesla(userId);
+        } catch (err) {
+          console.error('Initial vehicle sync after Tesla link failed:', err);
+        }
       }
     },
   },

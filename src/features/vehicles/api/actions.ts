@@ -6,6 +6,8 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import type { Vehicle, TripStop, VehicleStatus } from '@/types/vehicle';
 
+import { syncVehiclesFromTesla, STALENESS_THRESHOLD_MS } from './sync';
+
 /**
  * Format a DateTime as a relative time string (e.g., "3s ago", "5m ago", "2h ago").
  */
@@ -107,12 +109,31 @@ function mapPrismaVehicleToVehicle(prismaVehicle: PrismaVehicleWithStops): Vehic
 
 /**
  * Fetch all vehicles for the currently authenticated user.
+ * Triggers a sync from Tesla if data is stale (>30s old).
  * Returns an empty array if the user is not authenticated.
  */
 export async function getVehicles(): Promise<Vehicle[]> {
   const session = await auth();
   if (!session?.user?.id) {
     return [];
+  }
+
+  // Check staleness and sync if needed
+  try {
+    const latest = await prisma.vehicle.findFirst({
+      where: { userId: session.user.id },
+      orderBy: { lastUpdated: 'desc' },
+      select: { lastUpdated: true },
+    });
+
+    const isStale =
+      !latest || Date.now() - latest.lastUpdated.getTime() > STALENESS_THRESHOLD_MS;
+
+    if (isStale) {
+      await syncVehiclesFromTesla(session.user.id);
+    }
+  } catch {
+    // Sync failure is expected with invalid/dev tokens — fall through to cached DB data
   }
 
   const prismaVehicles = await prisma.vehicle.findMany({

@@ -60,9 +60,11 @@ describe('useLocalStorage', () => {
 
   it('warns on write failure without crashing', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('Storage full');
-    });
+    const setItemSpy = vi
+      .spyOn(window.localStorage, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('Storage full');
+      });
 
     const { result } = renderHook(() => useLocalStorage('key', 'default'));
 
@@ -75,5 +77,7 @@ describe('useLocalStorage', () => {
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining('Failed to write key'),
     );
+
+    setItemSpy.mockRestore();
   });
 });

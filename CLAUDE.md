@@ -97,7 +97,13 @@ Each feature directory contains:
 
 ## Branching Strategy
 
-Create a feature branch from `main` for every issue. Branch name format: `<issue-number>-<short-kebab-description>` derived from the issue title.
+When picking up a new issue, always pull the latest changes from `main` first, then create the feature branch from the updated `main`:
+
+```bash
+git checkout main && git pull origin main && git checkout -b <branch-name>
+```
+
+Branch name format: `<issue-number>-<short-kebab-description>` derived from the issue title.
 
 Examples:
 - Issue #23 "Simplify auth to social-only (Google + Apple)" → `23-simplify-auth-social-only`

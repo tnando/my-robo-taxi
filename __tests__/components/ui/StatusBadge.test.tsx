@@ -26,15 +26,18 @@ describe('StatusBadge', () => {
   it('applies the correct status color to the label', () => {
     const { container } = render(<StatusBadge status="driving" />);
     const labelSpan = container.querySelectorAll('span')[2]; // outer > dot, label
-    expect(labelSpan.style.color).toBe('rgb(48, 209, 88)'); // #30D158
+    const color = labelSpan.style.color;
+    // happy-dom keeps hex, jsdom normalizes to rgb()
+    expect(color === '#30D158' || color === 'rgb(48, 209, 88)').toBe(true);
   });
 
   it('renders a colored dot indicator', () => {
     const { container } = render(<StatusBadge status="parked" />);
     const dot = container.querySelector('.w-2.h-2.rounded-full');
     expect(dot).toBeTruthy();
-    // jsdom normalizes hex colors to rgb() format
-    expect(dot?.getAttribute('style')).toContain('background-color');
-    expect(dot?.getAttribute('style')).toContain('rgb(59, 130, 246)');
+    const style = dot?.getAttribute('style') ?? '';
+    expect(style).toContain('background-color');
+    // happy-dom keeps hex, jsdom normalizes to rgb()
+    expect(style.includes('#3B82F6') || style.includes('rgb(59, 130, 246)')).toBe(true);
   });
 });
