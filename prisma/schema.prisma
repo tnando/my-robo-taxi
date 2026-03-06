@@ -46,6 +46,8 @@ model Account {
 model Vehicle {
   id               String        @id @default(cuid())
   userId           String
+  teslaVehicleId   String?       @unique
+  vin              String?       @unique
   name             String
   model            String
   year             Int

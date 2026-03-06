@@ -27,6 +27,8 @@ async function main() {
     create: {
       id: VEHICLE_1_ID,
       userId: DEV_USER_ID,
+      teslaVehicleId: 'tesla-v1-id',
+      vin: '5YJ3E1EA1NF000001',
       name: 'Midnight Runner',
       model: 'Model Y Long Range',
       year: 2024,
@@ -59,6 +61,8 @@ async function main() {
     create: {
       id: VEHICLE_2_ID,
       userId: DEV_USER_ID,
+      teslaVehicleId: 'tesla-v2-id',
+      vin: '5YJ3E1EA1NF000002',
       name: 'Pearl',
       model: 'Model 3 Performance',
       year: 2025,

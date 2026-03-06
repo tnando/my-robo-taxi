@@ -35,7 +35,8 @@ describe('StopsList', () => {
     const { container } = render(<StopsList stops={[stops[0]]} />);
     const svg = container.querySelector('svg');
     expect(svg).toBeTruthy();
-    expect(svg?.className.baseVal).toContain('text-gold');
+    const className = svg?.getAttribute('class') ?? '';
+    expect(className).toContain('text-gold');
   });
 
   it('renders a dot for waypoint stops', () => {
