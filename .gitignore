@@ -22,6 +22,7 @@ e2e/.auth/
 # misc
 .DS_Store
 *.pem
+!public/.well-known/appspecific/com.tesla.3p.public-key.pem
 
 # debug
 npm-debug.log*

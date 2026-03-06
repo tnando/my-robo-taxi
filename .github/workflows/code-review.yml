@@ -140,7 +140,7 @@ jobs:
 
           # BOT_PAT belongs to tnando-gh-bot (a separate collaborator with write access)
           # so it can approve/request-changes on PRs authored by tnando.
-          if echo "$COMMENT" | grep -qi 'Verdict.*APPROVE'; then
+          if echo "$COMMENT" | grep -qi 'Verdict' && echo "$COMMENT" | grep -qi '\bAPPROVE\b'; then
             echo "Submitting approval"
             # Dismiss any stale REQUEST_CHANGES review from the bot before approving
             REVIEW_ID=$(GH_TOKEN=${{ secrets.BOT_PAT }} gh api \
@@ -154,7 +154,7 @@ jobs:
             fi
             GH_TOKEN=${{ secrets.BOT_PAT }} gh pr review "$PR_NUMBER" --approve \
               -b "Automated approval based on Claude Code review."
-          elif echo "$COMMENT" | grep -qi 'Verdict.*REQUEST_CHANGES'; then
+          elif echo "$COMMENT" | grep -qi 'Verdict' && echo "$COMMENT" | grep -qi '\bREQUEST_CHANGES\b'; then
             echo "Submitting request for changes"
             GH_TOKEN=${{ secrets.BOT_PAT }} gh pr review "$PR_NUMBER" --request-changes \
               -b "Changes requested based on Claude Code review."
