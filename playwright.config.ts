@@ -1,4 +1,9 @@
+import { loadEnvConfig } from '@next/env';
 import { defineConfig, devices } from '@playwright/test';
+
+// Load .env.local so DATABASE_URL and AUTH_SECRET are available to Playwright
+// setup scripts (prisma db push/seed, JWT generation).
+loadEnvConfig(process.cwd());
 
 /**
  * Playwright E2E test configuration for MyRoboTaxi.
