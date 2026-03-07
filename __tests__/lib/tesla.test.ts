@@ -39,7 +39,7 @@ describe('Tesla constants', () => {
 
   it('exports correct userinfo URL', () => {
     expect(TESLA_USERINFO_URL).toBe(
-      'https://fleet-api.prd.na.vn.cloud.tesla.com/api/1/users/me',
+      'https://auth.tesla.com/oauth2/v3/userinfo',
     );
   });
 

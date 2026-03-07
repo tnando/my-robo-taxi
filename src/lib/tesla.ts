@@ -11,7 +11,7 @@ export const TESLA_AUTH_URL = 'https://auth.tesla.com/oauth2/v3/authorize';
 export const TESLA_TOKEN_URL =
   'https://auth.tesla.com/oauth2/v3/token';
 export const TESLA_USERINFO_URL =
-  'https://fleet-api.prd.na.vn.cloud.tesla.com/api/1/users/me';
+  'https://auth.tesla.com/oauth2/v3/userinfo';
 export const TESLA_AUDIENCE = 'https://fleet-api.prd.na.vn.cloud.tesla.com';
 export const TESLA_ISSUER = 'https://auth.tesla.com/oauth2/v3/nts';
 export const TESLA_SCOPES =

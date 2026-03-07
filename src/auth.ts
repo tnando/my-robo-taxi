@@ -43,8 +43,14 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             },
             userinfo: { url: TESLA_USERINFO_URL },
             profile(profile: Record<string, unknown>) {
+              const sub = profile.sub ?? profile.id;
+              if (!sub) {
+                throw new Error(
+                  'Tesla userinfo response missing user identifier (sub/id)',
+                );
+              }
               return {
-                id: String(profile.sub ?? profile.id),
+                id: String(sub),
                 name: String(profile.full_name ?? profile.name ?? 'Tesla User'),
                 email: String(profile.email ?? ''),
               };
