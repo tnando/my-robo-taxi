@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 
 const AUTH_PAGES = ['/signin', '/signup'];
-const PUBLIC_PATHS = ['/signin', '/signup', '/api/auth'];
+const PUBLIC_PATHS = ['/signin', '/signup', '/api/auth', '/.well-known'];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((path) => pathname.startsWith(path));
