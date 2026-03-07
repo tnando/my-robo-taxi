@@ -1,17 +1,15 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
-
 import { CarIcon } from './CarIcon';
+
+export interface HomeEmptyScreenProps {
+  onLinkTesla: () => void;
+}
 
 /**
  * Empty state for the home screen — shown when no vehicles are linked.
  * Gold gradient glow background, car icon, welcome heading, two CTA buttons.
  * Matches ui-mocks/src/pages/HomeEmpty.tsx pixel-for-pixel.
  */
-export function HomeEmptyScreen() {
-  const router = useRouter();
-
+export function HomeEmptyScreen({ onLinkTesla }: HomeEmptyScreenProps) {
   return (
     <div className="min-h-screen bg-bg-primary flex flex-col items-center justify-center px-8 relative overflow-hidden">
       {/* Subtle gradient background */}
@@ -37,17 +35,19 @@ export function HomeEmptyScreen() {
         {/* Buttons */}
         <div className="space-y-4">
           {/* Primary CTA — gold filled */}
-          <button
-            onClick={() => router.push('/')}
-            className="w-full bg-gold text-bg-primary font-semibold py-4 px-6 rounded-xl hover:bg-gold-light transition-colors text-base"
-          >
-            Add Your Tesla
-          </button>
+          <form action={onLinkTesla}>
+            <button
+              type="submit"
+              className="w-full bg-gold text-bg-primary font-semibold py-4 px-6 rounded-xl hover:bg-gold-light transition-colors text-base"
+            >
+              Add Your Tesla
+            </button>
+          </form>
 
           {/* Secondary — outlined */}
           <button
-            onClick={() => router.push('/')}
-            className="w-full border border-border-default text-text-primary font-medium py-4 px-6 rounded-xl hover:bg-bg-surface transition-colors text-base"
+            className="w-full border border-border-default text-text-primary font-medium py-4 px-6 rounded-xl hover:bg-bg-surface transition-colors text-base opacity-50 cursor-not-allowed"
+            disabled
           >
             Enter Invite Code
           </button>

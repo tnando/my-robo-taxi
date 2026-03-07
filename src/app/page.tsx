@@ -1,6 +1,13 @@
+import { signIn } from '@/auth';
 import { HomeScreen, HomeEmptyScreen, getVehicles } from '@/features/vehicles';
 import { MOCK_DRIVES } from '@/lib/mock-data';
 import { BottomNav } from '@/components/layout/BottomNav';
+
+/** Server action to initiate Tesla OAuth account linking. */
+async function handleLinkTesla() {
+  'use server';
+  await signIn('tesla', { redirectTo: '/' });
+}
 
 /**
  * Root route — renders the Home screen with map.
@@ -10,7 +17,7 @@ export default async function RootPage() {
   const vehicles = await getVehicles();
 
   if (vehicles.length === 0) {
-    return <HomeEmptyScreen />;
+    return <HomeEmptyScreen onLinkTesla={handleLinkTesla} />;
   }
 
   return (
