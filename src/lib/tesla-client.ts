@@ -62,10 +62,10 @@ export interface TeslaVehicleData {
   vin: string;
   display_name: string | null;
   state: string;
-  drive_state: TeslaDriveState;
-  charge_state: TeslaChargeState;
-  vehicle_state: TeslaVehicleState;
-  climate_state: TeslaClimateState;
+  drive_state?: TeslaDriveState;
+  charge_state?: TeslaChargeState;
+  vehicle_state?: TeslaVehicleState;
+  climate_state?: TeslaClimateState;
 }
 
 // ─── Internal fetch with retry ───────────────────────────────────────────────
