@@ -83,7 +83,18 @@ export function mapTeslaVehicleToUpsertData(
   listItem: TeslaVehicleListItem,
   vehicleData: TeslaVehicleData,
 ): TeslaVehicleUpsertData {
-  const { drive_state, charge_state, vehicle_state, climate_state } = vehicleData;
+  const drive_state = vehicleData.drive_state ?? {
+    latitude: null, longitude: null, heading: null, speed: null,
+  };
+  const charge_state = vehicleData.charge_state ?? {
+    battery_level: null, battery_range: null, charging_state: null,
+  };
+  const vehicle_state = vehicleData.vehicle_state ?? {
+    odometer: null, vehicle_name: null,
+  };
+  const climate_state = vehicleData.climate_state ?? {
+    inside_temp: null, outside_temp: null,
+  };
   const { model, year } = parseModelFromVin(vehicleData.vin);
 
   return {
@@ -96,8 +107,8 @@ export function mapTeslaVehicleToUpsertData(
     estimatedRange: Math.round(charge_state.battery_range ?? 0),
     status: mapTeslaStateToVehicleStatus(
       vehicleData.state,
-      charge_state.charging_state,
-      drive_state.speed,
+      charge_state.charging_state ?? null,
+      drive_state.speed ?? null,
     ),
     speed: drive_state.speed ?? 0,
     heading: drive_state.heading ?? 0,

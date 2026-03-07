@@ -168,7 +168,7 @@ describe('mapTeslaVehicleToUpsertData', () => {
   it('defaults null speed to 0', () => {
     const parkedData: TeslaVehicleData = {
       ...vehicleData,
-      drive_state: { ...vehicleData.drive_state, speed: null },
+      drive_state: { ...vehicleData.drive_state!, speed: null },
     };
 
     const result = mapTeslaVehicleToUpsertData(listItem, parkedData);
@@ -180,11 +180,30 @@ describe('mapTeslaVehicleToUpsertData', () => {
     const noNameData: TeslaVehicleData = {
       ...vehicleData,
       display_name: null,
-      vehicle_state: { ...vehicleData.vehicle_state, vehicle_name: null },
+      vehicle_state: { ...vehicleData.vehicle_state!, vehicle_name: null },
     };
 
     const result = mapTeslaVehicleToUpsertData(noNameItem, noNameData);
     expect(result.name).toBe('My Tesla');
+  });
+
+  it('handles missing sub-states for asleep vehicles', () => {
+    const asleepData: TeslaVehicleData = {
+      id: 123,
+      vehicle_id: 456,
+      vin: '5YJ3E1EA1PF000001',
+      display_name: 'Sleepy',
+      state: 'asleep',
+    };
+
+    const result = mapTeslaVehicleToUpsertData(listItem, asleepData);
+    expect(result.name).toBe('Sleepy');
+    expect(result.status).toBe('offline');
+    expect(result.speed).toBe(0);
+    expect(result.chargeLevel).toBe(0);
+    expect(result.odometerMiles).toBe(0);
+    expect(result.latitude).toBe(0);
+    expect(result.longitude).toBe(0);
   });
 
   it('defaults null values to 0', () => {
