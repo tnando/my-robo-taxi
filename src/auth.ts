@@ -13,6 +13,37 @@ import {
   TESLA_SCOPES,
 } from '@/lib/tesla';
 
+/**
+ * Reassign a Tesla account (and its vehicles) from an orphan user to the real
+ * authenticated user. Called from the JWT callback when Tesla OAuth creates a
+ * separate user because the Tesla profile returned an empty email.
+ */
+async function reassignTeslaToCurrentUser(
+  orphanUserId: string,
+  realUserId: string,
+): Promise<void> {
+  await prisma.$transaction([
+    prisma.account.updateMany({
+      where: { userId: orphanUserId, provider: 'tesla' },
+      data: { userId: realUserId },
+    }),
+    prisma.vehicle.updateMany({
+      where: { userId: orphanUserId },
+      data: { userId: realUserId },
+    }),
+    prisma.settings.upsert({
+      where: { userId: realUserId },
+      create: { userId: realUserId, teslaLinked: true },
+      update: { teslaLinked: true },
+    }),
+  ]);
+
+  // Delete the orphan user — cascade cleans up its Settings row
+  await prisma.user.delete({ where: { id: orphanUserId } }).catch(() => {
+    // Ignore if already deleted or has remaining dependencies
+  });
+}
+
 export const { auth, handlers, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
@@ -61,9 +92,22 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       : []),
   ],
   callbacks: {
-    jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
+    async jwt({ token, user, account }) {
+      if (user?.id) {
+        if (
+          account?.provider === 'tesla' &&
+          token.id &&
+          token.id !== user.id &&
+          !user.email
+        ) {
+          // Tesla OAuth created an orphan user (empty email couldn't match the
+          // existing Google user). Reassign the Tesla account and vehicles to
+          // the real user whose session initiated the link.
+          await reassignTeslaToCurrentUser(user.id, String(token.id));
+          // Keep token.id pointing to the real (Google) user
+        } else {
+          token.id = user.id;
+        }
       }
       return token;
     },
