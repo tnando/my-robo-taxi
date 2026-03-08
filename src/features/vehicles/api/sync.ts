@@ -41,6 +41,14 @@ async function pollForVehicleData(
 }
 
 /**
+ * Check whether the Tesla API response includes drive_state,
+ * which indicates the virtual key is paired with the vehicle.
+ */
+function hasFullData(vehicleData: TeslaVehicleData): boolean {
+  return vehicleData.drive_state !== undefined;
+}
+
+/**
  * Sync vehicles from Tesla Fleet API into the database.
  * Internal function — NOT a server action. Called by getVehicles() (which
  * validates the session) and by the auth linkAccount event.
@@ -58,6 +66,7 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
     return 0;
   }
   let syncedCount = 0;
+  let virtualKeyPaired = false;
 
   for (const listItem of teslaVehicles) {
     try {
@@ -74,6 +83,9 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         }
       }
 
+      const fullData = hasFullData(vehicleData);
+      if (fullData) virtualKeyPaired = true;
+
       const upsertData = mapTeslaVehicleToUpsertData(listItem, vehicleData);
       const teslaVehicleId = upsertData.teslaVehicleId;
 
@@ -81,20 +93,26 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
       // to preserve the last known position in the database.
       const hasValidCoords = upsertData.latitude !== 0 || upsertData.longitude !== 0;
 
+      // When virtual key is not paired, only charge_state comes back.
+      // Only update fields that have real data to avoid overwriting
+      // previous values with mapper defaults.
       const updateData: Record<string, unknown> = {
-        name: upsertData.name,
-        model: upsertData.model,
-        year: upsertData.year,
         chargeLevel: upsertData.chargeLevel,
         estimatedRange: upsertData.estimatedRange,
-        status: upsertData.status,
-        speed: upsertData.speed,
-        heading: upsertData.heading,
-        interiorTemp: upsertData.interiorTemp,
-        exteriorTemp: upsertData.exteriorTemp,
-        odometerMiles: upsertData.odometerMiles,
         lastUpdated: new Date(),
       };
+
+      if (fullData) {
+        updateData.name = upsertData.name;
+        updateData.model = upsertData.model;
+        updateData.year = upsertData.year;
+        updateData.status = upsertData.status;
+        updateData.speed = upsertData.speed;
+        updateData.heading = upsertData.heading;
+        updateData.interiorTemp = upsertData.interiorTemp;
+        updateData.exteriorTemp = upsertData.exteriorTemp;
+        updateData.odometerMiles = upsertData.odometerMiles;
+      }
 
       if (hasValidCoords) {
         updateData.latitude = upsertData.latitude;
@@ -116,6 +134,15 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
     } catch (err) {
       console.warn(`Failed to sync Tesla vehicle ${listItem.id}:`, err);
     }
+  }
+
+  // Update virtual key pairing status so the UI can show setup prompts
+  if (teslaVehicles.length > 0) {
+    await prisma.settings.upsert({
+      where: { userId },
+      create: { userId, virtualKeyPaired },
+      update: { virtualKeyPaired },
+    });
   }
 
   return syncedCount;

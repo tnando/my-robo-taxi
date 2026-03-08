@@ -51,6 +51,7 @@ vi.mock('@/lib/tesla-mapper', () => ({
 const mockVehicleUpsert = vi.fn();
 const mockVehicleFindFirst = vi.fn();
 const mockVehicleFindMany = vi.fn();
+const mockSettingsUpsert = vi.fn();
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -58,6 +59,9 @@ vi.mock('@/lib/prisma', () => ({
       upsert: (...args: unknown[]) => mockVehicleUpsert(...args),
       findFirst: (...args: unknown[]) => mockVehicleFindFirst(...args),
       findMany: (...args: unknown[]) => mockVehicleFindMany(...args),
+    },
+    settings: {
+      upsert: (...args: unknown[]) => mockSettingsUpsert(...args),
     },
   },
 }));
@@ -108,6 +112,7 @@ describe('syncVehiclesFromTesla', () => {
       climate_state: {},
     });
     mockVehicleUpsert.mockResolvedValue({});
+    mockSettingsUpsert.mockResolvedValue({});
 
     const count = await syncVehiclesFromTesla('user-1');
 
@@ -117,6 +122,14 @@ describe('syncVehiclesFromTesla', () => {
       expect.objectContaining({
         where: { teslaVehicleId: '123' },
         create: expect.objectContaining({ userId: 'user-1' }),
+      }),
+    );
+    // drive_state present → virtualKeyPaired should be true
+    expect(mockSettingsUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: 'user-1' },
+        create: expect.objectContaining({ virtualKeyPaired: true }),
+        update: expect.objectContaining({ virtualKeyPaired: true }),
       }),
     );
   });
@@ -142,6 +155,7 @@ describe('syncVehiclesFromTesla', () => {
       });
     mockWakeVehicle.mockResolvedValue(undefined);
     mockVehicleUpsert.mockResolvedValue({});
+    mockSettingsUpsert.mockResolvedValue({});
 
     const count = await syncVehiclesFromTesla('user-1');
 
@@ -149,6 +163,32 @@ describe('syncVehiclesFromTesla', () => {
     expect(mockWakeVehicle).toHaveBeenCalledWith('test-token', 123);
     expect(mockGetVehicleData).toHaveBeenCalledTimes(3); // initial + 2 polls
   }, 15_000);
+
+  it('sets virtualKeyPaired false when drive_state is missing', async () => {
+    mockGetTeslaAccessToken.mockResolvedValue('test-token');
+    mockListVehicles.mockResolvedValue([
+      { id: 123, vehicle_id: 456, vin: 'VIN1', display_name: 'Car 1', state: 'online' },
+    ]);
+    mockGetVehicleData.mockResolvedValue({
+      id: 123,
+      vin: 'VIN1',
+      state: 'online',
+      charge_state: { battery_level: 69 },
+      // No drive_state, vehicle_state, or climate_state — virtual key not paired
+    });
+    mockVehicleUpsert.mockResolvedValue({});
+    mockSettingsUpsert.mockResolvedValue({});
+
+    const count = await syncVehiclesFromTesla('user-1');
+
+    expect(count).toBe(1);
+    expect(mockSettingsUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ virtualKeyPaired: false }),
+        update: expect.objectContaining({ virtualKeyPaired: false }),
+      }),
+    );
+  });
 
   it('continues to next vehicle on per-vehicle error', async () => {
     mockGetTeslaAccessToken.mockResolvedValue('test-token');
@@ -170,6 +210,7 @@ describe('syncVehiclesFromTesla', () => {
     mockVehicleUpsert
       .mockResolvedValueOnce({})
       .mockRejectedValueOnce(new Error('DB error'));
+    mockSettingsUpsert.mockResolvedValue({});
 
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const count = await syncVehiclesFromTesla('user-1');

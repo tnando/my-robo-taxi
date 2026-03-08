@@ -52,6 +52,7 @@ export async function getSettings(): Promise<UserSettings | null> {
     email: session.user.email ?? '',
     teslaLinked,
     teslaVehicleName: settings.teslaVehicleName ?? undefined,
+    virtualKeyPaired: settings.virtualKeyPaired,
     notifications: {
       driveStarted: settings.notifyDriveStarted,
       driveCompleted: settings.notifyDriveCompleted,
@@ -113,8 +114,8 @@ export async function unlinkTesla(): Promise<void> {
     prisma.account.deleteMany({ where: { userId, provider: 'tesla' } }),
     prisma.settings.upsert({
       where: { userId },
-      create: { userId, teslaLinked: false, teslaVehicleName: null },
-      update: { teslaLinked: false, teslaVehicleName: null },
+      create: { userId, teslaLinked: false, teslaVehicleName: null, virtualKeyPaired: false },
+      update: { teslaLinked: false, teslaVehicleName: null, virtualKeyPaired: false },
     }),
   ]);
 

@@ -5,8 +5,11 @@ import dynamic from 'next/dynamic';
 
 import type { Vehicle } from '@/types/vehicle';
 import type { Drive } from '@/types/drive';
+import { SetupBanner } from '@/components/ui/SetupBanner';
 
 import { BottomSheet, shouldShowHalfContent } from '@/components/layout/BottomSheet';
+
+const TESLA_KEY_PAIRING_URL = 'https://tesla.com/_ak/myrobotaxi.app';
 
 import { useBottomSheet } from '../hooks/use-bottom-sheet';
 import { VehicleDotSelector } from './VehicleDotSelector';
@@ -27,14 +30,17 @@ export interface HomeScreenProps {
   vehicles: Vehicle[];
   /** All drives (used to find the latest drive for the current vehicle). */
   drives: Drive[];
+  /** Whether the Tesla virtual key is paired with the vehicle. */
+  virtualKeyPaired?: boolean;
 }
 
 /**
  * Main home screen orchestrator — full-screen map with bottom sheet.
  * Coordinates VehicleMap, VehicleDotSelector, BottomSheet, and peek/half content.
  */
-export function HomeScreen({ vehicles, drives }: HomeScreenProps) {
+export function HomeScreen({ vehicles, drives, virtualKeyPaired = true }: HomeScreenProps) {
   const [currentVehicleIndex, setCurrentVehicleIndex] = useState(0);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   const sheet = useBottomSheet('peek');
 
   const vehicle = vehicles[currentVehicleIndex];
@@ -107,6 +113,19 @@ export function HomeScreen({ vehicles, drives }: HomeScreenProps) {
         onTouchEnd={sheet.onTouchEnd}
         onToggle={sheet.toggle}
       >
+        {/* Setup banner — shown when virtual key is not paired */}
+        {!virtualKeyPaired && !bannerDismissed && (
+          <div className="px-6 mb-4">
+            <SetupBanner
+              title="Complete Setup"
+              description="Pair your virtual key to unlock live location, temperatures, and vehicle name"
+              actionLabel="Pair Now"
+              onAction={() => window.open(TESLA_KEY_PAIRING_URL, '_blank')}
+              onDismiss={() => setBannerDismissed(true)}
+            />
+          </div>
+        )}
+
         {/* Peek content */}
         {isDriving ? (
           <DrivingPeekContent
