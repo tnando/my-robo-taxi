@@ -175,7 +175,43 @@ describe('mapTeslaVehicleToUpsertData', () => {
     expect(result.speed).toBe(0);
   });
 
-  it('uses fallback name when display_name is null', () => {
+  it('prefers vehicle_state.vehicle_name when present', () => {
+    const item: TeslaVehicleListItem = { ...listItem, display_name: 'List Name' };
+    const data: TeslaVehicleData = {
+      ...vehicleData,
+      display_name: 'Data Name',
+      vehicle_state: { ...vehicleData.vehicle_state!, vehicle_name: 'Custom Name' },
+    };
+
+    const result = mapTeslaVehicleToUpsertData(item, data);
+    expect(result.name).toBe('Custom Name');
+  });
+
+  it('falls back to listItem.display_name when vehicle_name is empty', () => {
+    const item: TeslaVehicleListItem = { ...listItem, display_name: 'List Name' };
+    const data: TeslaVehicleData = {
+      ...vehicleData,
+      display_name: null,
+      vehicle_state: { ...vehicleData.vehicle_state!, vehicle_name: '' },
+    };
+
+    const result = mapTeslaVehicleToUpsertData(item, data);
+    expect(result.name).toBe('List Name');
+  });
+
+  it('falls back to vehicleData.display_name when listItem.display_name is null', () => {
+    const item: TeslaVehicleListItem = { ...listItem, display_name: null };
+    const data: TeslaVehicleData = {
+      ...vehicleData,
+      display_name: 'Data Name',
+      vehicle_state: { ...vehicleData.vehicle_state!, vehicle_name: null },
+    };
+
+    const result = mapTeslaVehicleToUpsertData(item, data);
+    expect(result.name).toBe('Data Name');
+  });
+
+  it('falls back to "My Tesla" when all name sources are null', () => {
     const noNameItem: TeslaVehicleListItem = { ...listItem, display_name: null };
     const noNameData: TeslaVehicleData = {
       ...vehicleData,
@@ -188,6 +224,7 @@ describe('mapTeslaVehicleToUpsertData', () => {
   });
 
   it('handles missing sub-states for asleep vehicles', () => {
+    const asleepItem: TeslaVehicleListItem = { ...listItem, display_name: null };
     const asleepData: TeslaVehicleData = {
       id: 123,
       vehicle_id: 456,
@@ -196,7 +233,7 @@ describe('mapTeslaVehicleToUpsertData', () => {
       state: 'asleep',
     };
 
-    const result = mapTeslaVehicleToUpsertData(listItem, asleepData);
+    const result = mapTeslaVehicleToUpsertData(asleepItem, asleepData);
     expect(result.name).toBe('Sleepy');
     expect(result.status).toBe('offline');
     expect(result.speed).toBe(0);

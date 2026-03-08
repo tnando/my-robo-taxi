@@ -105,7 +105,7 @@ export function mapTeslaVehicleToUpsertData(
   return {
     teslaVehicleId: String(listItem.id),
     vin: vehicleData.vin,
-    name: vehicleData.display_name ?? vehicle_state.vehicle_name ?? 'My Tesla',
+    name: vehicle_state.vehicle_name || listItem.display_name || vehicleData.display_name || 'My Tesla',
     model,
     year,
     chargeLevel: charge_state.battery_level ?? 0,
