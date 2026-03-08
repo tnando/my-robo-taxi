@@ -121,7 +121,7 @@ describe('syncVehiclesFromTesla', () => {
     );
   });
 
-  it('wakes vehicle on 408 and retries', async () => {
+  it('wakes vehicle on 408 and polls until online', async () => {
     mockGetTeslaAccessToken.mockResolvedValue('test-token');
     mockListVehicles.mockResolvedValue([
       { id: 123, vehicle_id: 456, vin: 'VIN1', display_name: 'Car', state: 'asleep' },
@@ -129,8 +129,9 @@ describe('syncVehiclesFromTesla', () => {
 
     const sleepError = new TeslaApiError('Vehicle is asleep', 408, true);
     mockGetVehicleData
-      .mockRejectedValueOnce(sleepError)
-      .mockResolvedValueOnce({
+      .mockRejectedValueOnce(sleepError) // initial attempt
+      .mockRejectedValueOnce(sleepError) // poll attempt 1 — still asleep
+      .mockResolvedValueOnce({           // poll attempt 2 — awake
         id: 123,
         vin: 'VIN1',
         state: 'online',
@@ -146,8 +147,8 @@ describe('syncVehiclesFromTesla', () => {
 
     expect(count).toBe(1);
     expect(mockWakeVehicle).toHaveBeenCalledWith('test-token', 123);
-    expect(mockGetVehicleData).toHaveBeenCalledTimes(2);
-  }, 10_000);
+    expect(mockGetVehicleData).toHaveBeenCalledTimes(3); // initial + 2 polls
+  }, 15_000);
 
   it('continues to next vehicle on per-vehicle error', async () => {
     mockGetTeslaAccessToken.mockResolvedValue('test-token');

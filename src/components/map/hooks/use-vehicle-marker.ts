@@ -23,7 +23,7 @@ export function useVehicleMarker(
   // Create or update marker position
   useEffect(() => {
     const m = map.current;
-    if (!m || !showMarker) return;
+    if (!m || !mapLoaded || !showMarker) return;
 
     if (!markerElRef.current) {
       const el = document.createElement('div');
