@@ -147,3 +147,13 @@ body {
 .animate-fade-in {
   animation: fade-in 0.4s ease-out;
 }
+
+/* Overlay fade-in for modal dialogs */
+@keyframes overlay-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-overlay-fade-in {
+  animation: overlay-fade-in 0.2s ease-out;
+}

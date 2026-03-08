@@ -1,20 +1,10 @@
-import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { SettingsScreen } from '@/features/settings/components/SettingsScreen';
 
 import type { UserSettings } from '@/features/settings/types';
-
-// jsdom doesn't implement HTMLDialogElement.showModal/close
-beforeEach(() => {
-  HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
-    this.setAttribute('open', '');
-  });
-  HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) {
-    this.removeAttribute('open');
-  });
-});
 
 const baseSettings: UserSettings = {
   name: 'Jane Doe',
