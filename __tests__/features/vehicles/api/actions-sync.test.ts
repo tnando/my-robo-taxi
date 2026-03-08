@@ -71,8 +71,17 @@ vi.mock('@/auth', () => ({
   auth: () => mockAuth(),
 }));
 
+const mockRevalidatePath = vi.fn();
+vi.mock('next/cache', () => ({
+  revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
+}));
+
+vi.mock('@/features/vehicles/api/vehicle-mappers', () => ({
+  mapPrismaVehicleToVehicle: vi.fn((v: unknown) => v),
+}));
+
 import { syncVehiclesFromTesla } from '@/features/vehicles/api/sync';
-import { getVehicles } from '@/features/vehicles/api/actions';
+import { getVehicles, getCachedVehicles, syncVehicles } from '@/features/vehicles/api/actions';
 import { TeslaApiError } from '@/lib/tesla-client';
 
 // ─── Setup ───────────────────────────────────────────────────────────────────
@@ -317,5 +326,82 @@ describe('getVehicles', () => {
 
     const result = await getVehicles();
     expect(result).toEqual([]);
+  });
+});
+
+// ─── getCachedVehicles ────────────────────────────────────────────────────────
+
+describe('getCachedVehicles', () => {
+  const mockSession = { user: { id: 'user-1' } };
+
+  it('returns vehicles from DB without triggering sync', async () => {
+    mockAuth.mockResolvedValue(mockSession);
+    mockVehicleFindMany.mockResolvedValue([{ id: 'v1', name: 'Car' }]);
+
+    const result = await getCachedVehicles();
+
+    expect(result).toEqual([{ id: 'v1', name: 'Car' }]);
+    expect(mockGetTeslaAccessToken).not.toHaveBeenCalled();
+    expect(mockVehicleFindFirst).not.toHaveBeenCalled();
+  });
+
+  it('returns empty array when not authenticated', async () => {
+    mockAuth.mockResolvedValue(null);
+
+    const result = await getCachedVehicles();
+    expect(result).toEqual([]);
+  });
+});
+
+// ─── syncVehicles ─────────────────────────────────────────────────────────────
+
+describe('syncVehicles', () => {
+  const mockSession = { user: { id: 'user-1' } };
+
+  it('syncs and revalidates when data is stale', async () => {
+    mockAuth.mockResolvedValue(mockSession);
+    const staleDate = new Date(Date.now() - 60_000);
+    mockVehicleFindFirst.mockResolvedValue({ lastUpdated: staleDate });
+    mockGetTeslaAccessToken.mockResolvedValue('test-token');
+    mockListVehicles.mockResolvedValue([]);
+    mockSettingsUpsert.mockResolvedValue({});
+
+    await syncVehicles();
+
+    expect(mockGetTeslaAccessToken).toHaveBeenCalledWith('user-1');
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/');
+  });
+
+  it('skips sync when data is fresh', async () => {
+    mockAuth.mockResolvedValue(mockSession);
+    const freshDate = new Date();
+    mockVehicleFindFirst.mockResolvedValue({ lastUpdated: freshDate });
+
+    await syncVehicles();
+
+    expect(mockGetTeslaAccessToken).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when not authenticated', async () => {
+    mockAuth.mockResolvedValue(null);
+
+    await syncVehicles();
+
+    expect(mockVehicleFindFirst).not.toHaveBeenCalled();
+  });
+
+  it('logs error on failure without throwing', async () => {
+    mockAuth.mockResolvedValue(mockSession);
+    mockVehicleFindFirst.mockRejectedValue(new Error('DB down'));
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await syncVehicles();
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[syncVehicles] Background sync failed'),
+      expect.anything(),
+    );
+    consoleSpy.mockRestore();
   });
 });

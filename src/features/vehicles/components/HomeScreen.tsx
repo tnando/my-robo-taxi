@@ -11,6 +11,7 @@ import { TESLA_KEY_PAIRING_URL } from '@/lib/constants';
 import { BottomSheet, shouldShowHalfContent } from '@/components/layout/BottomSheet';
 
 import { useBottomSheet } from '../hooks/use-bottom-sheet';
+import { useBackgroundSync } from '../hooks/use-background-sync';
 import { VehicleDotSelector } from './VehicleDotSelector';
 import { DrivingPeekContent } from './DrivingPeekContent';
 import { ParkedPeekContent } from './ParkedPeekContent';
@@ -31,16 +32,19 @@ export interface HomeScreenProps {
   drives: Drive[];
   /** Whether the Tesla virtual key is paired with the vehicle. */
   virtualKeyPaired?: boolean;
+  /** Server action to trigger a background sync from Tesla. */
+  onSync?: () => Promise<void>;
 }
 
 /**
  * Main home screen orchestrator — full-screen map with bottom sheet.
  * Coordinates VehicleMap, VehicleDotSelector, BottomSheet, and peek/half content.
  */
-export function HomeScreen({ vehicles, drives, virtualKeyPaired = true }: HomeScreenProps) {
+export function HomeScreen({ vehicles, drives, virtualKeyPaired = true, onSync }: HomeScreenProps) {
   const [currentVehicleIndex, setCurrentVehicleIndex] = useState(0);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const sheet = useBottomSheet('peek');
+  const isSyncing = useBackgroundSync(onSync ?? (() => Promise.resolve()));
 
   const vehicle = vehicles[currentVehicleIndex];
 
@@ -101,6 +105,16 @@ export function HomeScreen({ vehicles, drives, virtualKeyPaired = true }: HomeSc
           />
         </VehicleMap>
       </div>
+
+      {/* Sync indicator */}
+      {isSyncing && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20" role="status">
+          <div className="px-3 py-1 bg-bg-surface/80 backdrop-blur-sm rounded-full flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
+            <span className="text-xs text-text-secondary">Updating...</span>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Sheet */}
       <BottomSheet
