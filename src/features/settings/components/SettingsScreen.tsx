@@ -2,6 +2,9 @@
 
 import { useState, useTransition } from 'react';
 
+import { SetupBanner } from '@/components/ui/SetupBanner';
+import { TESLA_KEY_PAIRING_URL } from '@/lib/constants';
+
 import type { UserSettings } from '../types';
 
 import { ToggleSwitch } from './ToggleSwitch';
@@ -81,6 +84,18 @@ export function SettingsScreen({
           <p className="text-text-muted text-sm font-light">{settings.email}</p>
         </div>
       </div>
+
+      {/* Setup banner — shown when Tesla is linked but virtual key is not paired */}
+      {settings.teslaLinked && !settings.virtualKeyPaired && !unlinkSuccess && (
+        <div className="px-6 mb-6">
+          <SetupBanner
+            title="Virtual Key Not Paired"
+            description="Pair your key with your vehicle to enable location tracking and climate data"
+            actionLabel="Pair"
+            onAction={() => window.open(TESLA_KEY_PAIRING_URL, '_blank')}
+          />
+        </div>
+      )}
 
       {/* Tesla Account */}
       <div className="px-6 mb-10">

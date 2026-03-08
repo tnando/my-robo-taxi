@@ -176,6 +176,7 @@ model Settings {
   userId                String   @unique
   teslaLinked           Boolean  @default(false)
   teslaVehicleName      String?
+  virtualKeyPaired      Boolean  @default(false)
   notifyDriveStarted    Boolean  @default(true)
   notifyDriveCompleted  Boolean  @default(true)
   notifyChargingComplete Boolean @default(true)

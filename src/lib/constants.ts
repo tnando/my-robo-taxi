@@ -32,3 +32,6 @@ export const FALLBACK_POLL_INTERVAL = 10_000;
 
 /** Routes where the bottom nav is hidden. */
 export const HIDDEN_NAV_ROUTES = ['/signin', '/signup', '/empty', '/shared'];
+
+/** Tesla virtual key pairing deep link. */
+export const TESLA_KEY_PAIRING_URL = 'https://tesla.com/_ak/myrobotaxi.app';

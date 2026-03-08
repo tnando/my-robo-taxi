@@ -10,6 +10,7 @@ const baseSettings: UserSettings = {
   name: 'Jane Doe',
   email: 'jane@example.com',
   teslaLinked: false,
+  virtualKeyPaired: false,
   notifications: {
     driveStarted: true,
     driveCompleted: true,

@@ -17,5 +17,6 @@ export interface UserSettings {
   email: string;
   teslaLinked: boolean;
   teslaVehicleName?: string;
+  virtualKeyPaired: boolean;
   notifications: NotificationPreferences;
 }
