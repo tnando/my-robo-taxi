@@ -10,6 +10,12 @@ export interface VirtualKeyPairingDialogProps {
   onDefer: () => void;
 }
 
+const PREREQUISITES = [
+  'Tesla app installed',
+  'Bluetooth enabled',
+  'Within 30 feet of your car',
+];
+
 /**
  * Modal prompting the user to pair their Tesla virtual key.
  * Follows the same patterns as UnlinkConfirmDialog (focus, escape, scroll lock, ARIA).
@@ -75,6 +81,24 @@ export function VirtualKeyPairingDialog({
         aria-describedby="pairing-dialog-desc"
         className="bg-bg-surface border border-border-default rounded-2xl p-6 w-full max-w-xs mx-4 shadow-2xl animate-fade-in"
       >
+        {/* Gold key icon */}
+        <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center mb-4">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-gold"
+            aria-hidden="true"
+          >
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+          </svg>
+        </div>
+
         <h2
           id="pairing-dialog-title"
           className="text-text-primary text-lg font-semibold mb-2"
@@ -83,18 +107,22 @@ export function VirtualKeyPairingDialog({
         </h2>
         <p
           id="pairing-dialog-desc"
-          className="text-text-secondary text-sm font-light mb-4"
+          className="text-text-secondary text-sm font-light mb-5"
         >
           To see live location, temps, and vehicle details, pair your virtual key
           using the Tesla app. One-time setup.
         </p>
-        <p className="text-text-secondary text-sm font-light mb-6">
-          You&apos;ll need:
+
+        <p className="text-text-muted text-xs font-medium uppercase tracking-wider mb-3">
+          You&apos;ll need
         </p>
-        <ul className="text-text-secondary text-sm font-light mb-6 space-y-1 list-disc list-inside">
-          <li>Tesla app installed</li>
-          <li>Bluetooth enabled</li>
-          <li>Within 30 feet of your car</li>
+        <ul className="space-y-2.5 mb-6">
+          {PREREQUISITES.map((item) => (
+            <li key={item} className="flex items-center gap-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-gold shrink-0" />
+              <span className="text-text-primary text-sm font-light">{item}</span>
+            </li>
+          ))}
         </ul>
 
         <div className="flex flex-col gap-3">
@@ -102,7 +130,7 @@ export function VirtualKeyPairingDialog({
             href={TESLA_KEY_PAIRING_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full text-center px-4 py-2.5 text-sm font-medium bg-accent-gold text-bg-primary rounded-xl hover:bg-accent-gold/90 transition-colors"
+            className="block w-full text-center py-3.5 px-6 text-sm font-semibold bg-gold text-bg-primary rounded-xl hover:bg-gold-light transition-colors"
           >
             Open Tesla App to Pair
           </a>
@@ -110,7 +138,7 @@ export function VirtualKeyPairingDialog({
             ref={deferRef}
             type="button"
             onClick={onDefer}
-            className="w-full px-4 py-2.5 text-sm font-medium text-text-muted hover:text-text-secondary transition-colors rounded-xl"
+            className="w-full py-3 px-6 text-sm font-medium text-text-secondary border border-border-default rounded-xl hover:bg-bg-surface-hover transition-colors"
           >
             Remind Me Later
           </button>

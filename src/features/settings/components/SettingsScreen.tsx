@@ -129,7 +129,7 @@ export function SettingsScreen({
             <form action={onLinkTesla}>
               <button
                 type="submit"
-                className="text-accent-gold text-sm font-medium hover:text-accent-gold/80 transition-colors"
+                className="text-gold text-sm font-medium hover:text-gold/80 transition-colors"
               >
                 Link
               </button>

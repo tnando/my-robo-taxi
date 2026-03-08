@@ -39,7 +39,7 @@ export function SetupBanner({
         <button
           type="button"
           onClick={onAction}
-          className="px-3 py-1.5 rounded-lg border border-accent-gold text-accent-gold text-xs font-medium hover:bg-accent-gold/10 transition-colors whitespace-nowrap shrink-0"
+          className="px-3 py-1.5 rounded-lg border border-gold text-gold text-xs font-medium hover:bg-gold/10 transition-colors whitespace-nowrap shrink-0"
         >
           {actionLabel}
         </button>
@@ -68,7 +68,7 @@ function KeyIcon() {
       height="20"
       viewBox="0 0 20 20"
       fill="none"
-      className="text-accent-gold shrink-0 mt-0.5"
+      className="text-gold shrink-0 mt-0.5"
       aria-hidden="true"
     >
       <path
