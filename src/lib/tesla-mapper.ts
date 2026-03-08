@@ -97,6 +97,11 @@ export function mapTeslaVehicleToUpsertData(
   };
   const { model, year } = parseModelFromVin(vehicleData.vin);
 
+  // Latitude/longitude may be null when the vehicle is asleep/offline.
+  // Use null to signal "no update" so the sync layer can preserve the last known position.
+  const latitude = drive_state.latitude ?? null;
+  const longitude = drive_state.longitude ?? null;
+
   return {
     teslaVehicleId: String(listItem.id),
     vin: vehicleData.vin,
@@ -112,8 +117,8 @@ export function mapTeslaVehicleToUpsertData(
     ),
     speed: drive_state.speed ?? 0,
     heading: drive_state.heading ?? 0,
-    latitude: drive_state.latitude ?? 0,
-    longitude: drive_state.longitude ?? 0,
+    latitude: latitude ?? 0,
+    longitude: longitude ?? 0,
     interiorTemp: celsiusToFahrenheit(climate_state.inside_temp ?? 20),
     exteriorTemp: celsiusToFahrenheit(climate_state.outside_temp ?? 20),
     odometerMiles: Math.round(vehicle_state.odometer ?? 0),

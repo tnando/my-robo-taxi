@@ -48,6 +48,30 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
       const upsertData = mapTeslaVehicleToUpsertData(listItem, vehicleData);
       const teslaVehicleId = upsertData.teslaVehicleId;
 
+      // Skip lat/lng update when Tesla returns 0,0 (vehicle asleep/offline)
+      // to preserve the last known position in the database.
+      const hasValidCoords = upsertData.latitude !== 0 || upsertData.longitude !== 0;
+
+      const updateData: Record<string, unknown> = {
+        name: upsertData.name,
+        model: upsertData.model,
+        year: upsertData.year,
+        chargeLevel: upsertData.chargeLevel,
+        estimatedRange: upsertData.estimatedRange,
+        status: upsertData.status,
+        speed: upsertData.speed,
+        heading: upsertData.heading,
+        interiorTemp: upsertData.interiorTemp,
+        exteriorTemp: upsertData.exteriorTemp,
+        odometerMiles: upsertData.odometerMiles,
+        lastUpdated: new Date(),
+      };
+
+      if (hasValidCoords) {
+        updateData.latitude = upsertData.latitude;
+        updateData.longitude = upsertData.longitude;
+      }
+
       await prisma.vehicle.upsert({
         where: { teslaVehicleId },
         create: {
@@ -57,22 +81,7 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
           licensePlate: '',
           lastUpdated: new Date(),
         },
-        update: {
-          name: upsertData.name,
-          model: upsertData.model,
-          year: upsertData.year,
-          chargeLevel: upsertData.chargeLevel,
-          estimatedRange: upsertData.estimatedRange,
-          status: upsertData.status,
-          speed: upsertData.speed,
-          heading: upsertData.heading,
-          latitude: upsertData.latitude,
-          longitude: upsertData.longitude,
-          interiorTemp: upsertData.interiorTemp,
-          exteriorTemp: upsertData.exteriorTemp,
-          odometerMiles: upsertData.odometerMiles,
-          lastUpdated: new Date(),
-        },
+        update: updateData,
       });
       syncedCount++;
     } catch (err) {

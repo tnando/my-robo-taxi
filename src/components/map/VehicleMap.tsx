@@ -54,9 +54,14 @@ export function VehicleMap({
   interactive = true,
   children,
 }: VehicleMapProps) {
-  const { mapContainer, map, mapLoaded } = useMapInstance(center, zoom, interactive);
+  // Guard against 0,0 coordinates (Tesla returns null when vehicle is asleep/offline,
+  // mapper defaults to 0). Fall back to the Mapbox default center.
+  const validCenter: LngLat =
+    center[0] === 0 && center[1] === 0 ? MAPBOX_DEFAULT_CENTER : center;
 
-  const markerPos = vehiclePosition ?? center;
+  const { mapContainer, map, mapLoaded } = useMapInstance(validCenter, zoom, interactive);
+
+  const markerPos = vehiclePosition ?? validCenter;
   useVehicleMarker(map, mapLoaded, showVehicleMarker, markerPos, heading);
 
   const { fitToRoute } = useRouteLayer(
