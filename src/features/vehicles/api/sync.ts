@@ -98,13 +98,13 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
       // Only update fields that have real data to avoid overwriting
       // previous values with mapper defaults.
       const updateData: Record<string, unknown> = {
+        name: upsertData.name,
         chargeLevel: upsertData.chargeLevel,
         estimatedRange: upsertData.estimatedRange,
         lastUpdated: new Date(),
       };
 
       if (fullData) {
-        updateData.name = upsertData.name;
         updateData.model = upsertData.model;
         updateData.year = upsertData.year;
         updateData.status = upsertData.status;
