@@ -53,6 +53,8 @@ export async function getSettings(): Promise<UserSettings | null> {
     teslaLinked,
     teslaVehicleName: settings.teslaVehicleName ?? undefined,
     virtualKeyPaired: settings.virtualKeyPaired,
+    keyPairingDeferredAt: settings.keyPairingDeferredAt?.toISOString(),
+    keyPairingReminderCount: settings.keyPairingReminderCount,
     notifications: {
       driveStarted: settings.notifyDriveStarted,
       driveCompleted: settings.notifyDriveCompleted,
@@ -114,10 +116,51 @@ export async function unlinkTesla(): Promise<void> {
     prisma.account.deleteMany({ where: { userId, provider: 'tesla' } }),
     prisma.settings.upsert({
       where: { userId },
-      create: { userId, teslaLinked: false, teslaVehicleName: null, virtualKeyPaired: false },
-      update: { teslaLinked: false, teslaVehicleName: null, virtualKeyPaired: false },
+      create: {
+        userId,
+        teslaLinked: false,
+        teslaVehicleName: null,
+        virtualKeyPaired: false,
+        keyPairingDeferredAt: null,
+        keyPairingReminderCount: 0,
+      },
+      update: {
+        teslaLinked: false,
+        teslaVehicleName: null,
+        virtualKeyPaired: false,
+        keyPairingDeferredAt: null,
+        keyPairingReminderCount: 0,
+      },
     }),
   ]);
 
   revalidatePath('/settings');
+}
+
+/**
+ * Defer the virtual key pairing prompt.
+ * Increments the reminder count and stores the first deferral timestamp.
+ */
+export async function deferKeyPairing(): Promise<void> {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error('Not authenticated');
+  }
+
+  const userId = session.user.id;
+
+  const settings = await prisma.settings.upsert({
+    where: { userId },
+    create: { userId },
+    update: {},
+  });
+
+  await prisma.settings.update({
+    where: { userId },
+    data: {
+      keyPairingReminderCount: settings.keyPairingReminderCount + 1,
+      keyPairingDeferredAt: settings.keyPairingDeferredAt ?? new Date(),
+    },
+  });
 }

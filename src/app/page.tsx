@@ -1,6 +1,6 @@
 import { signIn } from '@/auth';
 import { HomeScreen, HomeEmptyScreen, getVehicles } from '@/features/vehicles';
-import { getSettings } from '@/features/settings';
+import { getSettings, deferKeyPairing, shouldShowPairingModal, PairingModalTrigger } from '@/features/settings';
 import { MOCK_DRIVES } from '@/lib/mock-data';
 import { BottomNav } from '@/components/layout/BottomNav';
 
@@ -8,6 +8,12 @@ import { BottomNav } from '@/components/layout/BottomNav';
 async function handleLinkTesla() {
   'use server';
   await signIn('tesla', { redirectTo: '/' });
+}
+
+/** Server action to defer virtual key pairing. */
+async function handleDeferPairing() {
+  'use server';
+  await deferKeyPairing();
 }
 
 /**
@@ -22,10 +28,14 @@ export default async function RootPage() {
   }
 
   const virtualKeyPaired = settings?.virtualKeyPaired ?? false;
+  const showPairingModal = settings ? shouldShowPairingModal(settings) : false;
 
   return (
     <div className="min-h-screen bg-bg-primary">
       <HomeScreen vehicles={vehicles} drives={MOCK_DRIVES} virtualKeyPaired={virtualKeyPaired} />
+      {showPairingModal && (
+        <PairingModalTrigger autoShow onDefer={handleDeferPairing} />
+      )}
       <BottomNav />
     </div>
   );

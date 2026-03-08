@@ -352,11 +352,12 @@ async function main() {
   // ─── Settings ───────────────────────────────────────────────────────
   await prisma.settings.upsert({
     where: { userId: DEV_USER_ID },
-    update: {},
+    update: { virtualKeyPaired: true },
     create: {
       userId: DEV_USER_ID,
       teslaLinked: true,
       teslaVehicleName: 'Midnight Runner',
+      virtualKeyPaired: true,
       notifyDriveStarted: true,
       notifyDriveCompleted: true,
       notifyChargingComplete: true,

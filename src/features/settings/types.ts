@@ -18,5 +18,7 @@ export interface UserSettings {
   teslaLinked: boolean;
   teslaVehicleName?: string;
   virtualKeyPaired: boolean;
+  keyPairingDeferredAt?: string;
+  keyPairingReminderCount: number;
   notifications: NotificationPreferences;
 }

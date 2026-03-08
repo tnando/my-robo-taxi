@@ -11,6 +11,7 @@ const baseSettings: UserSettings = {
   email: 'jane@example.com',
   teslaLinked: false,
   virtualKeyPaired: false,
+  keyPairingReminderCount: 0,
   notifications: {
     driveStarted: true,
     driveCompleted: true,

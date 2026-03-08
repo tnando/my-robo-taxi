@@ -176,8 +176,10 @@ model Settings {
   userId                String   @unique
   teslaLinked           Boolean  @default(false)
   teslaVehicleName      String?
-  virtualKeyPaired      Boolean  @default(false)
-  notifyDriveStarted    Boolean  @default(true)
+  virtualKeyPaired          Boolean   @default(false)
+  keyPairingDeferredAt      DateTime?
+  keyPairingReminderCount   Int       @default(0)
+  notifyDriveStarted        Boolean   @default(true)
   notifyDriveCompleted  Boolean  @default(true)
   notifyChargingComplete Boolean @default(true)
   notifyViewerJoined    Boolean  @default(true)
