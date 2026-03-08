@@ -158,7 +158,7 @@ export async function getVehicleData(
   accessToken: string,
   vehicleId: number,
 ): Promise<TeslaVehicleData> {
-  const endpoints = 'charge_state;drive_state;vehicle_state;climate_state';
+  const endpoints = 'charge_state;climate_state;drive_state;location_data;vehicle_state';
   const res = await fetchWithRetry(
     `${BASE_URL}/api/1/vehicles/${vehicleId}/vehicle_data?endpoints=${endpoints}`,
     { headers: authHeaders(accessToken) },
