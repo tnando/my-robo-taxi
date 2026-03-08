@@ -55,6 +55,7 @@ function hasFullData(vehicleData: TeslaVehicleData): boolean {
  * Returns the count of successfully synced vehicles.
  */
 export async function syncVehiclesFromTesla(userId: string): Promise<number> {
+  const startTime = Date.now();
   const accessToken = await getTeslaAccessToken(userId);
   if (!accessToken) return 0;
 
@@ -62,7 +63,7 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
   try {
     teslaVehicles = await teslaListVehicles(accessToken);
   } catch (err) {
-    console.warn('Failed to list Tesla vehicles:', err);
+    console.error('[sync] Failed to list Tesla vehicles for user', userId, err);
     return 0;
   }
   let syncedCount = 0;
@@ -132,18 +133,29 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
       });
       syncedCount++;
     } catch (err) {
-      console.warn(`Failed to sync Tesla vehicle ${listItem.id}:`, err);
+      console.error(`[sync] Failed to sync vehicle ${listItem.id} (step: fetch/upsert):`, err);
     }
   }
 
-  // Update virtual key pairing status so the UI can show setup prompts
+  // Update virtual key pairing status so the UI can show setup prompts.
+  // Isolated from the vehicle sync so a settings error doesn't prevent
+  // returning the successful vehicle sync count.
   if (teslaVehicles.length > 0) {
-    await prisma.settings.upsert({
-      where: { userId },
-      create: { userId, virtualKeyPaired },
-      update: { virtualKeyPaired },
-    });
+    try {
+      await prisma.settings.upsert({
+        where: { userId },
+        create: { userId, virtualKeyPaired },
+        update: { virtualKeyPaired },
+      });
+    } catch (err) {
+      console.error('[sync] Failed to update settings for user', userId, err);
+    }
   }
+
+  const durationMs = Date.now() - startTime;
+  console.log(
+    `[sync] Completed for user ${userId}: ${syncedCount}/${teslaVehicles.length} vehicles synced in ${durationMs}ms`,
+  );
 
   return syncedCount;
 }

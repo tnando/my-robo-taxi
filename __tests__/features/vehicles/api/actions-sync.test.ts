@@ -79,6 +79,8 @@ import { TeslaApiError } from '@/lib/tesla-client';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Suppress sync completion log in tests
+  vi.spyOn(console, 'log').mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -212,12 +214,41 @@ describe('syncVehiclesFromTesla', () => {
       .mockRejectedValueOnce(new Error('DB error'));
     mockSettingsUpsert.mockResolvedValue({});
 
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const count = await syncVehiclesFromTesla('user-1');
 
     expect(count).toBe(1);
     expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to sync Tesla vehicle'),
+      expect.stringContaining('[sync] Failed to sync vehicle'),
+      expect.anything(),
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it('returns synced count even when settings upsert fails', async () => {
+    mockGetTeslaAccessToken.mockResolvedValue('test-token');
+    mockListVehicles.mockResolvedValue([
+      { id: 123, vehicle_id: 456, vin: 'VIN1', display_name: 'Car 1', state: 'online' },
+    ]);
+    mockGetVehicleData.mockResolvedValue({
+      id: 123,
+      vin: 'VIN1',
+      state: 'online',
+      drive_state: {},
+      charge_state: {},
+      vehicle_state: {},
+      climate_state: {},
+    });
+    mockVehicleUpsert.mockResolvedValue({});
+    mockSettingsUpsert.mockRejectedValue(new Error('Settings column missing'));
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const count = await syncVehiclesFromTesla('user-1');
+
+    expect(count).toBe(1);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[sync] Failed to update settings'),
+      expect.stringContaining('user-1'),
       expect.anything(),
     );
     consoleSpy.mockRestore();
@@ -263,17 +294,22 @@ describe('getVehicles', () => {
     expect(mockGetTeslaAccessToken).not.toHaveBeenCalled();
   });
 
-  it('serves cached data when sync fails', async () => {
+  it('serves cached data when sync fails and logs the error', async () => {
     mockAuth.mockResolvedValue(mockSession);
     mockVehicleFindFirst.mockResolvedValue(null);
     mockGetTeslaAccessToken.mockRejectedValue(new Error('Sync boom'));
     mockVehicleFindMany.mockResolvedValue([]);
 
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const result = await getVehicles();
 
     expect(result).toEqual([]);
-    // Sync failure is silently caught — falls through to cached DB data
     expect(mockVehicleFindMany).toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[getVehicles] Sync failed'),
+      expect.anything(),
+    );
+    consoleSpy.mockRestore();
   });
 
   it('returns empty array when not authenticated', async () => {

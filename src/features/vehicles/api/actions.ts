@@ -132,8 +132,8 @@ export async function getVehicles(): Promise<Vehicle[]> {
     if (isStale) {
       await syncVehiclesFromTesla(session.user.id);
     }
-  } catch {
-    // Sync failure is expected with invalid/dev tokens — fall through to cached DB data
+  } catch (err) {
+    console.error('[getVehicles] Sync failed, serving cached data:', err);
   }
 
   const prismaVehicles = await prisma.vehicle.findMany({
