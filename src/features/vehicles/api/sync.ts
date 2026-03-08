@@ -6,10 +6,39 @@ import {
   wakeVehicle,
   TeslaApiError,
 } from '@/lib/tesla-client';
+import type { TeslaVehicleData } from '@/lib/tesla-client';
 import { mapTeslaVehicleToUpsertData } from '@/lib/tesla-mapper';
 
 export const STALENESS_THRESHOLD_MS = 30_000;
-const WAKE_WAIT_MS = 5_000;
+const WAKE_POLL_INTERVAL_MS = 3_000;
+const WAKE_MAX_ATTEMPTS = 5; // 5 polls × 3s = 15s max wait
+
+/**
+ * Poll for vehicle data after a wake command.
+ * Retries up to WAKE_MAX_ATTEMPTS times with WAKE_POLL_INTERVAL_MS between each.
+ * Throws if the vehicle never wakes.
+ */
+async function pollForVehicleData(
+  accessToken: string,
+  vehicleId: number,
+): Promise<TeslaVehicleData> {
+  for (let attempt = 0; attempt < WAKE_MAX_ATTEMPTS; attempt++) {
+    await new Promise((r) => setTimeout(r, WAKE_POLL_INTERVAL_MS));
+    try {
+      return await getVehicleData(accessToken, vehicleId);
+    } catch (err) {
+      if (err instanceof TeslaApiError && err.statusCode === 408) {
+        continue; // Still asleep, try again
+      }
+      throw err;
+    }
+  }
+  throw new TeslaApiError(
+    `Vehicle did not wake after ${WAKE_MAX_ATTEMPTS} attempts`,
+    408,
+    false,
+  );
+}
 
 /**
  * Sync vehicles from Tesla Fleet API into the database.
@@ -37,9 +66,9 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         vehicleData = await getVehicleData(accessToken, listItem.id);
       } catch (err) {
         if (err instanceof TeslaApiError && err.statusCode === 408) {
+          // Vehicle is asleep — wake it and poll until it responds
           await wakeVehicle(accessToken, listItem.id);
-          await new Promise((r) => setTimeout(r, WAKE_WAIT_MS));
-          vehicleData = await getVehicleData(accessToken, listItem.id);
+          vehicleData = await pollForVehicleData(accessToken, listItem.id);
         } else {
           throw err;
         }
