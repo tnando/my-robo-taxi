@@ -1,9 +1,20 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { SettingsScreen } from '@/features/settings/components/SettingsScreen';
 
 import type { UserSettings } from '@/features/settings/types';
+
+// jsdom doesn't implement HTMLDialogElement.showModal/close
+beforeEach(() => {
+  HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
+    this.setAttribute('open', '');
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) {
+    this.removeAttribute('open');
+  });
+});
 
 const baseSettings: UserSettings = {
   name: 'Jane Doe',
@@ -53,12 +64,14 @@ describe('SettingsScreen — Tesla Link/Unlink', () => {
     expect(button.closest('form')).toBeInTheDocument();
   });
 
-  it('renders Unlink as a submit button inside a form', () => {
+  it('renders Unlink as a button that opens a confirmation dialog', async () => {
     renderScreen({ teslaLinked: true, teslaVehicleName: 'Model Y' });
 
     const button = screen.getByRole('button', { name: 'Unlink' });
-    expect(button).toHaveAttribute('type', 'submit');
-    expect(button.closest('form')).toBeInTheDocument();
+    expect(button).toHaveAttribute('type', 'button');
+
+    await userEvent.click(button);
+    expect(screen.getByText('Unlink Tesla account?')).toBeInTheDocument();
   });
 
   it('shows linked vehicle name', () => {

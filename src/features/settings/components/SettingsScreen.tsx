@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 
 import type { UserSettings } from '../types';
 
 import { ToggleSwitch } from './ToggleSwitch';
+import { UnlinkConfirmDialog } from './UnlinkConfirmDialog';
 
 /** Props for the SettingsScreen component. */
 export interface SettingsScreenProps {
@@ -45,11 +46,22 @@ export function SettingsScreen({
   onToggle,
 }: SettingsScreenProps) {
   const [notifications, setNotifications] = useState(settings.notifications);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [unlinkSuccess, setUnlinkSuccess] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const handleToggle = (key: keyof UserSettings['notifications']) => {
     const newValue = !notifications[key];
     setNotifications((prev) => ({ ...prev, [key]: newValue }));
     onToggle?.(key, newValue);
+  };
+
+  const handleUnlinkConfirm = () => {
+    startTransition(async () => {
+      await onUnlinkTesla();
+      setShowConfirm(false);
+      setUnlinkSuccess(true);
+    });
   };
 
   return (
@@ -79,24 +91,25 @@ export function SettingsScreen({
           <div className="flex items-center gap-3">
             <div
               className={`w-2 h-2 rounded-full ${
-                settings.teslaLinked ? 'bg-status-driving' : 'bg-text-muted'
+                settings.teslaLinked && !unlinkSuccess ? 'bg-status-driving' : 'bg-text-muted'
               }`}
             />
             <p className="text-text-primary text-sm font-light">
-              {settings.teslaLinked
-                ? `Linked to ${settings.teslaVehicleName ?? 'Tesla'}`
-                : 'Not linked'}
+              {unlinkSuccess
+                ? 'Tesla account unlinked'
+                : settings.teslaLinked
+                  ? `Linked to ${settings.teslaVehicleName ?? 'Tesla'}`
+                  : 'Not linked'}
             </p>
           </div>
-          {settings.teslaLinked ? (
-            <form action={onUnlinkTesla}>
-              <button
-                type="submit"
-                className="text-text-muted text-sm font-light hover:text-red-400 transition-colors"
-              >
-                Unlink
-              </button>
-            </form>
+          {settings.teslaLinked && !unlinkSuccess ? (
+            <button
+              type="button"
+              onClick={() => setShowConfirm(true)}
+              className="text-text-muted text-sm font-light hover:text-red-400 transition-colors"
+            >
+              Unlink
+            </button>
           ) : (
             <form action={onLinkTesla}>
               <button
@@ -109,6 +122,13 @@ export function SettingsScreen({
           )}
         </div>
       </div>
+
+      <UnlinkConfirmDialog
+        open={showConfirm}
+        loading={isPending}
+        onConfirm={handleUnlinkConfirm}
+        onCancel={() => setShowConfirm(false)}
+      />
 
       {/* Notifications */}
       <div className="px-6 mb-10">

@@ -1,5 +1,7 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
+
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -106,13 +108,15 @@ export async function unlinkTesla(): Promise<void> {
 
   const userId = session.user.id;
 
-  await prisma.account.deleteMany({
-    where: { userId, provider: 'tesla' },
-  });
+  await prisma.$transaction([
+    prisma.vehicle.deleteMany({ where: { userId } }),
+    prisma.account.deleteMany({ where: { userId, provider: 'tesla' } }),
+    prisma.settings.upsert({
+      where: { userId },
+      create: { userId, teslaLinked: false, teslaVehicleName: null },
+      update: { teslaLinked: false, teslaVehicleName: null },
+    }),
+  ]);
 
-  await prisma.settings.upsert({
-    where: { userId },
-    create: { userId, teslaLinked: false, teslaVehicleName: null },
-    update: { teslaLinked: false, teslaVehicleName: null },
-  });
+  revalidatePath('/settings');
 }
