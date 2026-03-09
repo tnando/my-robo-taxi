@@ -45,7 +45,7 @@ export function HomeScreen({ vehicles, drives, virtualKeyPaired = true, onSync }
   const [currentVehicleIndex, setCurrentVehicleIndex] = useState(0);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const sheet = useBottomSheet('peek');
-  const syncAction = onSync ?? (() => Promise.resolve());
+  const syncAction = useMemo(() => onSync ?? (() => Promise.resolve()), [onSync]);
   const isAutoSyncing = useBackgroundSync(syncAction);
   const { pullDistance, isRefreshing } = usePullToRefresh(syncAction);
   const isSyncing = isAutoSyncing || isRefreshing;

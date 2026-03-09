@@ -25,6 +25,7 @@ export function usePullToRefresh(
   const [isRefreshing, startTransition] = useTransition();
   const touchStartY = useRef(0);
   const pulling = useRef(false);
+  const pullDistanceRef = useRef(0);
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (isRefreshing) return;
@@ -40,10 +41,13 @@ export function usePullToRefresh(
     if (!pulling.current || isRefreshing) return;
     const delta = e.touches[0].clientY - touchStartY.current;
     if (delta > 10) {
-      setPullDistance(Math.min(delta, MAX_PULL));
+      const clamped = Math.min(delta, MAX_PULL);
+      pullDistanceRef.current = clamped;
+      setPullDistance(clamped);
     } else if (delta < -10) {
       // User swiped up — cancel pull
       pulling.current = false;
+      pullDistanceRef.current = 0;
       setPullDistance(0);
     }
   }, [isRefreshing]);
@@ -52,15 +56,17 @@ export function usePullToRefresh(
     if (!pulling.current) return;
     pulling.current = false;
 
-    if (pullDistance >= PULL_THRESHOLD) {
+    if (pullDistanceRef.current >= PULL_THRESHOLD) {
+      pullDistanceRef.current = 0;
       setPullDistance(0);
       startTransition(async () => {
         await onRefresh();
       });
     } else {
+      pullDistanceRef.current = 0;
       setPullDistance(0);
     }
-  }, [pullDistance, onRefresh, startTransition]);
+  }, [onRefresh, startTransition]);
 
   useEffect(() => {
     document.addEventListener('touchstart', handleTouchStart, { passive: true });
