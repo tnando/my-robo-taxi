@@ -32,11 +32,12 @@ export function mapTeslaStateToVehicleStatus(
   vehicleState: string,
   chargingState: string | null,
   speed: number | null,
+  inService?: boolean,
 ): VehicleStatus {
   if (vehicleState === 'offline' || vehicleState === 'asleep') {
     return 'offline';
   }
-  if (vehicleState === 'in_service') {
+  if (inService || vehicleState === 'in_service') {
     return 'in_service';
   }
   if (chargingState === 'Charging') {
@@ -117,6 +118,7 @@ export function mapTeslaVehicleToUpsertData(
       vehicleData.state,
       charge_state.charging_state ?? null,
       drive_state.speed ?? null,
+      vehicleData.in_service,
     ),
     speed: drive_state.speed ?? 0,
     heading: drive_state.heading ?? 0,

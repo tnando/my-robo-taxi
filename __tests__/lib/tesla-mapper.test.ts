@@ -50,6 +50,18 @@ describe('mapTeslaStateToVehicleStatus', () => {
   it('prioritizes in_service over charging', () => {
     expect(mapTeslaStateToVehicleStatus('in_service', 'Charging', 0)).toBe('in_service');
   });
+
+  it('returns in_service when in_service boolean is true', () => {
+    expect(mapTeslaStateToVehicleStatus('online', null, 0, true)).toBe('in_service');
+  });
+
+  it('returns in_service via boolean even when charging', () => {
+    expect(mapTeslaStateToVehicleStatus('online', 'Charging', 0, true)).toBe('in_service');
+  });
+
+  it('ignores in_service boolean when vehicle is offline', () => {
+    expect(mapTeslaStateToVehicleStatus('offline', null, null, true)).toBe('offline');
+  });
 });
 
 // ─── celsiusToFahrenheit ─────────────────────────────────────────────────────
@@ -127,6 +139,7 @@ describe('mapTeslaVehicleToUpsertData', () => {
     vin: '5YJYE1EA1SF000001',
     display_name: 'My Tesla',
     state: 'online',
+    in_service: false,
     drive_state: {
       latitude: 30.325,
       longitude: -97.738,
@@ -239,6 +252,7 @@ describe('mapTeslaVehicleToUpsertData', () => {
       vin: '5YJ3E1EA1PF000001',
       display_name: 'Sleepy',
       state: 'asleep',
+      in_service: false,
     };
 
     const result = mapTeslaVehicleToUpsertData(asleepItem, asleepData);

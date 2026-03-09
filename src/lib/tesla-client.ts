@@ -62,6 +62,7 @@ export interface TeslaVehicleData {
   vin: string;
   display_name: string | null;
   state: string;
+  in_service: boolean;
   drive_state?: TeslaDriveState;
   charge_state?: TeslaChargeState;
   vehicle_state?: TeslaVehicleState;
