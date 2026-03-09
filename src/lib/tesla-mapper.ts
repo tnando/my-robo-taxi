@@ -33,6 +33,7 @@ export function mapTeslaStateToVehicleStatus(
   chargingState: string | null,
   speed: number | null,
   inService?: boolean,
+  shiftState?: string | null,
 ): VehicleStatus {
   if (vehicleState === 'offline' || vehicleState === 'asleep') {
     return 'offline';
@@ -43,7 +44,7 @@ export function mapTeslaStateToVehicleStatus(
   if (chargingState === 'Charging') {
     return 'charging';
   }
-  if (speed != null && speed > 0) {
+  if ((speed != null && speed > 0) || shiftState === 'D' || shiftState === 'R') {
     return 'driving';
   }
   return 'parked';
@@ -88,7 +89,7 @@ export function mapTeslaVehicleToUpsertData(
   vehicleData: TeslaVehicleData,
 ): TeslaVehicleUpsertData {
   const drive_state = vehicleData.drive_state ?? {
-    latitude: null, longitude: null, heading: null, speed: null,
+    latitude: null, longitude: null, heading: null, speed: null, shift_state: null,
   };
   const charge_state = vehicleData.charge_state ?? {
     battery_level: null, battery_range: null, charging_state: null,
@@ -119,6 +120,7 @@ export function mapTeslaVehicleToUpsertData(
       charge_state.charging_state ?? null,
       drive_state.speed ?? null,
       vehicleData.in_service,
+      drive_state.shift_state,
     ),
     speed: drive_state.speed ?? 0,
     heading: drive_state.heading ?? 0,

@@ -62,6 +62,22 @@ describe('mapTeslaStateToVehicleStatus', () => {
   it('ignores in_service boolean when vehicle is offline', () => {
     expect(mapTeslaStateToVehicleStatus('offline', null, null, true)).toBe('offline');
   });
+
+  it('returns driving when shift_state is D even with speed 0', () => {
+    expect(mapTeslaStateToVehicleStatus('online', null, 0, false, 'D')).toBe('driving');
+  });
+
+  it('returns driving when shift_state is R', () => {
+    expect(mapTeslaStateToVehicleStatus('online', null, 0, false, 'R')).toBe('driving');
+  });
+
+  it('returns parked when shift_state is P', () => {
+    expect(mapTeslaStateToVehicleStatus('online', null, 0, false, 'P')).toBe('parked');
+  });
+
+  it('returns parked when shift_state is null and speed is 0', () => {
+    expect(mapTeslaStateToVehicleStatus('online', null, 0, false, null)).toBe('parked');
+  });
 });
 
 // ─── celsiusToFahrenheit ─────────────────────────────────────────────────────
@@ -145,6 +161,7 @@ describe('mapTeslaVehicleToUpsertData', () => {
       longitude: -97.738,
       heading: 280,
       speed: 65,
+      shift_state: 'D',
     },
     charge_state: {
       battery_level: 78,
@@ -268,7 +285,7 @@ describe('mapTeslaVehicleToUpsertData', () => {
   it('defaults null values to 0', () => {
     const nullData: TeslaVehicleData = {
       ...vehicleData,
-      drive_state: { latitude: null, longitude: null, heading: null, speed: null },
+      drive_state: { latitude: null, longitude: null, heading: null, speed: null, shift_state: null },
       charge_state: { battery_level: null, battery_range: null, charging_state: null },
       vehicle_state: { odometer: null, vehicle_name: null },
       climate_state: { inside_temp: null, outside_temp: null },

@@ -30,6 +30,7 @@ export interface TeslaDriveState {
   longitude: number | null;
   heading: number | null;
   speed: number | null;
+  shift_state: string | null;
 }
 
 export interface TeslaChargeState {
