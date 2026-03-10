@@ -88,18 +88,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Bottom sheet touch isolation */
-.bottom-sheet-container {
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.bottom-sheet-content {
-  touch-action: pan-y;
-  overscroll-behavior: contain;
-}
-
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 4px;
