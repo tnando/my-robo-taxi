@@ -50,8 +50,8 @@ async function reassignTeslaToCurrentUser(
       '@/features/vehicles/api/sync'
     );
     await syncVehiclesFromTesla(realUserId);
-  } catch {
-    // Non-blocking — vehicles will sync on next page load
+  } catch (err) {
+    console.error('Post-reassignment vehicle sync failed:', err);
   }
 }
 
