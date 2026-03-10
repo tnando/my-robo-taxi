@@ -40,20 +40,20 @@ export function BottomSheet({
     <div
       role="region"
       aria-label="Vehicle details"
-      className="absolute bottom-0 left-0 right-0 z-40 bg-bg-secondary/95 backdrop-blur-2xl rounded-t-[24px] border-t border-border-default touch-none select-none"
+      className="absolute bottom-0 left-0 right-0 z-40 bg-bg-secondary/95 backdrop-blur-2xl rounded-t-[24px] border-t border-border-default"
       style={{
         height,
         transition: isDragging ? 'none' : 'height 0.3s ease-out',
       }}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
     >
-      {/* Drag handle — click to toggle on desktop */}
+      {/* Drag handle — touch to drag, click to toggle on desktop */}
       <button
         type="button"
         onClick={onToggle}
-        className="flex justify-center w-full pt-3 pb-2 cursor-pointer shrink-0"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        className="flex justify-center w-full pt-3 pb-2 cursor-pointer shrink-0 touch-none select-none"
         role="separator"
         aria-label="Toggle vehicle details"
       >
@@ -61,7 +61,7 @@ export function BottomSheet({
       </button>
 
       {/* Scrollable content area */}
-      <div className="overflow-y-auto touch-pan-y overscroll-contain" style={{ height: 'calc(100% - 28px)' }}>
+      <div className="overflow-y-auto overscroll-contain" style={{ height: 'calc(100% - 28px)' }}>
         {children}
       </div>
     </div>

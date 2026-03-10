@@ -103,11 +103,11 @@ describe('usePullToRefresh', () => {
     expect(result.current.pullDistance).toBe(120);
   });
 
-  it('ignores pull gesture when sheet is dragging', async () => {
+  it('ignores pull gesture when sheet is expanded beyond peek', async () => {
     const onRefresh = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(window, 'innerHeight', { value: 800, writable: true });
 
-    renderHook(() => usePullToRefresh(onRefresh, true));
+    renderHook(() => usePullToRefresh(onRefresh, 'half'));
 
     act(() => {
       touch('touchstart', 100);
@@ -119,5 +119,23 @@ describe('usePullToRefresh', () => {
     });
 
     expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('allows pull gesture when sheet is at peek', async () => {
+    const onRefresh = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(window, 'innerHeight', { value: 800, writable: true });
+
+    renderHook(() => usePullToRefresh(onRefresh, 'peek'));
+
+    act(() => {
+      touch('touchstart', 100);
+      touch('touchmove', 200);
+    });
+
+    await act(async () => {
+      touch('touchend', 200);
+    });
+
+    expect(onRefresh).toHaveBeenCalledTimes(1);
   });
 });

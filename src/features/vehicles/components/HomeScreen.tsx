@@ -47,7 +47,7 @@ export function HomeScreen({ vehicles, drives, virtualKeyPaired = true, onSync }
   const sheet = useBottomSheet('peek');
   const syncAction = useMemo(() => onSync ?? (() => Promise.resolve()), [onSync]);
   const isAutoSyncing = useBackgroundSync(syncAction);
-  const { pullDistance, isRefreshing } = usePullToRefresh(syncAction, sheet.isDragging);
+  const { pullDistance, isRefreshing } = usePullToRefresh(syncAction, sheet.sheetState);
   const isSyncing = isAutoSyncing || isRefreshing;
 
   const vehicle = vehicles[currentVehicleIndex];
@@ -87,8 +87,8 @@ export function HomeScreen({ vehicles, drives, virtualKeyPaired = true, onSync }
 
   return (
     <div className="h-screen bg-bg-primary relative overflow-hidden">
-      {/* Full-screen map */}
-      <div className="absolute inset-0">
+      {/* Full-screen map — disable interaction during sheet drag */}
+      <div className="absolute inset-0" style={{ pointerEvents: sheet.isDragging ? 'none' : 'auto' }}>
         <VehicleMap
           showVehicleMarker
           showRoute={isDriving}

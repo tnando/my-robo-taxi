@@ -20,7 +20,7 @@ export interface UsePullToRefreshReturn {
  */
 export function usePullToRefresh(
   onRefresh: () => Promise<void>,
-  isSheetDragging = false,
+  sheetState: 'peek' | 'half' | 'full' = 'peek',
 ): UsePullToRefreshReturn {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, startTransition] = useTransition();
@@ -29,14 +29,15 @@ export function usePullToRefresh(
   const pullDistanceRef = useRef(0);
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
-    if (isRefreshing || isSheetDragging) return;
+    // Only activate pull-to-refresh when the sheet is at peek (map visible)
+    if (isRefreshing || sheetState !== 'peek') return;
     const y = e.touches[0].clientY;
     // Only activate in top 40% of viewport (map area, above bottom sheet)
     if (y < window.innerHeight * 0.4) {
       touchStartY.current = y;
       pulling.current = true;
     }
-  }, [isRefreshing, isSheetDragging]);
+  }, [isRefreshing, sheetState]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!pulling.current || isRefreshing) return;
