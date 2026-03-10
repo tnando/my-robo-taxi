@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 
+import type { SheetState } from '../types';
+
 const PULL_THRESHOLD = 80;
 const MAX_PULL = 120;
 
@@ -20,7 +22,7 @@ export interface UsePullToRefreshReturn {
  */
 export function usePullToRefresh(
   onRefresh: () => Promise<void>,
-  sheetState: 'peek' | 'half' | 'full' = 'peek',
+  sheetState: SheetState = 'peek',
 ): UsePullToRefreshReturn {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, startTransition] = useTransition();

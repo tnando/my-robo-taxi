@@ -138,4 +138,22 @@ describe('usePullToRefresh', () => {
 
     expect(onRefresh).toHaveBeenCalledTimes(1);
   });
+
+  it('ignores pull gesture when sheet is at full', async () => {
+    const onRefresh = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(window, 'innerHeight', { value: 800, writable: true });
+
+    renderHook(() => usePullToRefresh(onRefresh, 'full'));
+
+    act(() => {
+      touch('touchstart', 100);
+      touch('touchmove', 200);
+    });
+
+    await act(async () => {
+      touch('touchend', 200);
+    });
+
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
 });
