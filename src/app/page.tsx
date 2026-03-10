@@ -1,5 +1,5 @@
 import { signIn } from '@/auth';
-import { HomeScreen, HomeEmptyScreen, getCachedVehicles, syncVehicles } from '@/features/vehicles';
+import { HomeScreen, HomeEmptyScreen, getCachedVehicles, getVehicles, syncVehicles } from '@/features/vehicles';
 import { getSettings, deferKeyPairing, shouldShowPairingModal, PairingModalTrigger } from '@/features/settings';
 import { MOCK_DRIVES } from '@/lib/mock-data';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -21,7 +21,10 @@ async function handleDeferPairing() {
  * Auth gate will redirect unauthenticated users to /signin once NextAuth is integrated.
  */
 export default async function RootPage() {
-  const [vehicles, settings] = await Promise.all([getCachedVehicles(), getSettings()]);
+  const [cachedVehicles, settings] = await Promise.all([getCachedVehicles(), getSettings()]);
+
+  // If no cached vehicles, try a full sync — the user may have just linked Tesla
+  const vehicles = cachedVehicles.length === 0 ? await getVehicles() : cachedVehicles;
 
   if (vehicles.length === 0) {
     return <HomeEmptyScreen onLinkTesla={handleLinkTesla} />;
