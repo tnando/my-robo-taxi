@@ -20,6 +20,7 @@ export interface UsePullToRefreshReturn {
  */
 export function usePullToRefresh(
   onRefresh: () => Promise<void>,
+  isSheetDragging = false,
 ): UsePullToRefreshReturn {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, startTransition] = useTransition();
@@ -28,14 +29,14 @@ export function usePullToRefresh(
   const pullDistanceRef = useRef(0);
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
-    if (isRefreshing) return;
+    if (isRefreshing || isSheetDragging) return;
     const y = e.touches[0].clientY;
     // Only activate in top 40% of viewport (map area, above bottom sheet)
     if (y < window.innerHeight * 0.4) {
       touchStartY.current = y;
       pulling.current = true;
     }
-  }, [isRefreshing]);
+  }, [isRefreshing, isSheetDragging]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!pulling.current || isRefreshing) return;

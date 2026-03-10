@@ -69,19 +69,19 @@ describe('useBottomSheet', () => {
     const { result } = renderHook(() => useBottomSheet('peek'));
 
     // Simulate drag start
-    const touchStart = { touches: [{ clientY: 600 }] } as unknown as React.TouchEvent;
+    const touchStart = { touches: [{ clientY: 600 }], preventDefault: () => {}, stopPropagation: () => {} } as unknown as React.TouchEvent;
     act(() => { result.current.onTouchStart(touchStart); });
     expect(result.current.isDragging).toBe(true);
 
     // Drag far up — should clamp at full height, not exceed it
-    const touchMove = { touches: [{ clientY: 0 }] } as unknown as React.TouchEvent;
+    const touchMove = { touches: [{ clientY: 0 }], preventDefault: () => {}, stopPropagation: () => {} } as unknown as React.TouchEvent;
     act(() => { result.current.onTouchMove(touchMove); });
 
     const fullHeight = Math.round(window.innerHeight * 0.9);
     expect(result.current.currentHeight).toBeLessThanOrEqual(fullHeight);
 
     // Drag far down — should clamp at floor (120)
-    const touchMoveDown = { touches: [{ clientY: 1200 }] } as unknown as React.TouchEvent;
+    const touchMoveDown = { touches: [{ clientY: 1200 }], preventDefault: () => {}, stopPropagation: () => {} } as unknown as React.TouchEvent;
     act(() => { result.current.onTouchMove(touchMoveDown); });
     expect(result.current.currentHeight).toBe(120);
   });
@@ -90,14 +90,14 @@ describe('useBottomSheet', () => {
     const { result } = renderHook(() => useBottomSheet('peek'));
 
     // Simulate drag to just past the peek/half midpoint
-    const touchStart = { touches: [{ clientY: 600 }] } as unknown as React.TouchEvent;
+    const touchStart = { touches: [{ clientY: 600 }], preventDefault: () => {}, stopPropagation: () => {} } as unknown as React.TouchEvent;
     act(() => { result.current.onTouchStart(touchStart); });
 
     // Drag up by enough to pass peek/half midpoint
     const halfHeight = Math.round(window.innerHeight * 0.5);
     const midpoint = (SHEET_PEEK_HEIGHT + halfHeight) / 2;
     const dragDistance = midpoint - SHEET_PEEK_HEIGHT + 20; // past midpoint
-    const touchMove = { touches: [{ clientY: 600 - dragDistance }] } as unknown as React.TouchEvent;
+    const touchMove = { touches: [{ clientY: 600 - dragDistance }], preventDefault: () => {}, stopPropagation: () => {} } as unknown as React.TouchEvent;
     act(() => { result.current.onTouchMove(touchMove); });
 
     act(() => { result.current.onTouchEnd(); });

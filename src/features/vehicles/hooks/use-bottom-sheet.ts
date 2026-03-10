@@ -84,6 +84,7 @@ export function useBottomSheet(
   }), [peekHeight, halfHeight, fullHeight]);
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
     dragStartY.current = e.touches[0].clientY;
     dragStartHeight.current = heights[sheetState];
     setIsDragging(true);
@@ -91,6 +92,8 @@ export function useBottomSheet(
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging) return;
+    e.preventDefault();
+    e.stopPropagation();
     const deltaY = dragStartY.current - e.touches[0].clientY;
     setSheetOffset(deltaY);
   }, [isDragging]);
