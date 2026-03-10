@@ -42,6 +42,17 @@ async function reassignTeslaToCurrentUser(
   await prisma.user.delete({ where: { id: orphanUserId } }).catch(() => {
     // Ignore if already deleted or has remaining dependencies
   });
+
+  // Sync vehicles for the real user — the linkAccount event ran the sync
+  // for the orphan before reassignment, so the real user has no vehicles yet.
+  try {
+    const { syncVehiclesFromTesla } = await import(
+      '@/features/vehicles/api/sync'
+    );
+    await syncVehiclesFromTesla(realUserId);
+  } catch {
+    // Non-blocking — vehicles will sync on next page load
+  }
 }
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
