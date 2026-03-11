@@ -1,7 +1,13 @@
 import { auth } from '@/auth';
+import {
+  isBetaGateEnabled,
+  isBetaExcludedPath,
+  BETA_COOKIE_NAME,
+  BETA_COOKIE_VALUE,
+} from '@/lib/beta-gate';
 
 const AUTH_PAGES = ['/signin', '/signup'];
-const PUBLIC_PATHS = ['/signin', '/signup', '/api/auth', '/.well-known'];
+const PUBLIC_PATHS = ['/signin', '/signup', '/beta', '/api/auth', '/.well-known'];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((path) => pathname.startsWith(path));
@@ -13,6 +19,15 @@ function isAuthPage(pathname: string): boolean {
 
 export const proxy = auth((req) => {
   const { pathname } = req.nextUrl;
+
+  // Beta gate — redirect to /beta if gate is enabled and user has no access.
+  // Users with an active session always bypass the gate.
+  if (isBetaGateEnabled() && !isBetaExcludedPath(pathname)) {
+    const hasBetaCookie = req.cookies.get(BETA_COOKIE_NAME)?.value === BETA_COOKIE_VALUE;
+    if (!req.auth && !hasBetaCookie) {
+      return Response.redirect(new URL('/beta', req.url));
+    }
+  }
 
   // Authenticated user on sign-in/sign-up page → redirect to home
   if (isAuthPage(pathname) && req.auth) {
