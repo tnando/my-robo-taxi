@@ -95,8 +95,11 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         }
       }
 
+      // Use fleet_status to determine virtual key pairing (more reliable
+      // than checking if drive_state is present in the response).
+      const keyPaired = await getFleetStatus(accessToken, listItem.id);
+
       // TODO(#127): remove diagnostic logging once virtual key issue is resolved
-      await getFleetStatus(accessToken, listItem.id);
       const presentCategories = [
         vehicleData.charge_state ? 'charge_state' : null,
         vehicleData.climate_state ? 'climate_state' : null,
@@ -104,12 +107,12 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         vehicleData.vehicle_state ? 'vehicle_state' : null,
       ].filter(Boolean);
       console.info(
-        `[sync] Vehicle ${listItem.id} (${listItem.vin}): state=${vehicleData.state}, in_service=${vehicleData.in_service}, categories=[${presentCategories.join(', ')}]`,
+        `[sync] Vehicle ${listItem.id} (${listItem.vin}): state=${vehicleData.state}, in_service=${vehicleData.in_service}, key_paired=${keyPaired}, categories=[${presentCategories.join(', ')}]`,
       );
 
       const fullData = hasFullData(vehicleData);
       totalCount++;
-      if (fullData) pairedCount++;
+      if (keyPaired) pairedCount++;
 
       const upsertData = mapTeslaVehicleToUpsertData(listItem, vehicleData);
       const teslaVehicleId = upsertData.teslaVehicleId;
@@ -126,7 +129,7 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         status: upsertData.status,
         chargeLevel: upsertData.chargeLevel,
         estimatedRange: upsertData.estimatedRange,
-        virtualKeyPaired: fullData,
+        virtualKeyPaired: keyPaired,
         lastUpdated: new Date(),
       };
 
@@ -152,7 +155,7 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
           userId,
           color: '',
           licensePlate: '',
-          virtualKeyPaired: fullData,
+          virtualKeyPaired: keyPaired,
           lastUpdated: new Date(),
         },
         update: updateData,
