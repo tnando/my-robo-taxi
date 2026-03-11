@@ -166,6 +166,9 @@ export async function getVehicleData(
     { headers: authHeaders(accessToken) },
   );
   const data = (await res.json()) as { response: TeslaVehicleData };
+  // TODO(#127): remove raw key logging once virtual key issue is resolved
+  const rawKeys = Object.keys(data.response).sort().join(', ');
+  console.info(`[tesla-client] vehicle_data for ${vehicleId}: raw_keys=[${rawKeys}]`);
   return data.response;
 }
 
