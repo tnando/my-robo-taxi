@@ -344,7 +344,7 @@ async function main() {
       refresh_token: 'dev-tesla-refresh-token',
       expires_at: Math.floor(Date.now() / 1000) + 86400,
       token_type: 'Bearer',
-      scope: 'openid offline_access user_data vehicle_device_data vehicle_location',
+      scope: 'openid offline_access user_data vehicle_device_data vehicle_cmds vehicle_location',
     },
   });
   console.log('Upserted Tesla account');

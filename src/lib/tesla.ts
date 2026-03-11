@@ -15,7 +15,7 @@ export const TESLA_USERINFO_URL =
 export const TESLA_AUDIENCE = 'https://fleet-api.prd.na.vn.cloud.tesla.com';
 export const TESLA_ISSUER = 'https://auth.tesla.com/oauth2/v3/nts';
 export const TESLA_SCOPES =
-  'openid email offline_access user_data vehicle_device_data vehicle_location';
+  'openid email offline_access user_data vehicle_device_data vehicle_cmds vehicle_location';
 
 // ─── Token refresh ──────────────────────────────────────────────────────────
 

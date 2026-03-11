@@ -51,6 +51,7 @@ describe('Tesla constants', () => {
     expect(TESLA_SCOPES).toContain('openid');
     expect(TESLA_SCOPES).toContain('offline_access');
     expect(TESLA_SCOPES).toContain('vehicle_device_data');
+    expect(TESLA_SCOPES).toContain('vehicle_cmds');
     expect(TESLA_SCOPES).toContain('vehicle_location');
   });
 });
