@@ -68,6 +68,15 @@ export async function createAuthStorageState(): Promise<{
         secure: false,
         sameSite: 'Lax',
       },
+      {
+        name: 'beta-access',
+        value: 'granted',
+        domain: 'localhost',
+        path: '/',
+        httpOnly: true,
+        secure: false,
+        sameSite: 'Lax',
+      },
     ],
     origins: [],
   };

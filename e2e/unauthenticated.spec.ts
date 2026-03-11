@@ -1,11 +1,27 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Unauthenticated user flows — no session cookie.
- * Uses default project (no storageState) so requests hit the auth middleware.
+ * Unauthenticated user flows — no session cookie but beta-access granted.
+ * Beta cookie included so these tests exercise the auth middleware, not the beta gate.
  */
+const BETA_STORAGE = {
+  cookies: [
+    {
+      name: 'beta-access',
+      value: 'granted',
+      domain: 'localhost',
+      path: '/',
+      expires: -1,
+      httpOnly: true,
+      secure: false,
+      sameSite: 'Lax' as const,
+    },
+  ],
+  origins: [] as { origin: string; localStorage: { name: string; value: string }[] }[],
+};
+
 test.describe('unauthenticated redirects', () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
+  test.use({ storageState: BETA_STORAGE });
 
   test('visiting / redirects to /signin', async ({ page }) => {
     await page.goto('/');
