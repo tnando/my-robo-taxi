@@ -10,11 +10,13 @@ vi.mock('@/lib/tesla', () => ({
 
 const mockListVehicles = vi.fn();
 const mockGetVehicleData = vi.fn();
+const mockGetFleetStatus = vi.fn();
 const mockWakeVehicle = vi.fn();
 
 vi.mock('@/lib/tesla-client', () => ({
   listVehicles: (...args: unknown[]) => mockListVehicles(...args),
   getVehicleData: (...args: unknown[]) => mockGetVehicleData(...args),
+  getFleetStatus: (...args: unknown[]) => mockGetFleetStatus(...args),
   wakeVehicle: (...args: unknown[]) => mockWakeVehicle(...args),
   TeslaApiError: class TeslaApiError extends Error {
     statusCode: number;
@@ -49,6 +51,7 @@ vi.mock('@/lib/tesla-mapper', () => ({
 }));
 
 const mockVehicleUpsert = vi.fn();
+const mockVehicleFindUnique = vi.fn();
 const mockVehicleFindFirst = vi.fn();
 const mockVehicleFindMany = vi.fn();
 const mockSettingsUpsert = vi.fn();
@@ -61,6 +64,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     vehicle: {
       upsert: (...args: unknown[]) => mockVehicleUpsert(...args),
+      findUnique: (...args: unknown[]) => mockVehicleFindUnique(...args),
       findFirst: (...args: unknown[]) => mockVehicleFindFirst(...args),
       findMany: (...args: unknown[]) => mockVehicleFindMany(...args),
     },
@@ -135,6 +139,7 @@ describe('syncVehiclesFromTesla', () => {
       vehicle_state: {},
       climate_state: {},
     });
+    mockGetFleetStatus.mockResolvedValue(true);
     mockVehicleUpsert.mockResolvedValue({});
     mockSettingsUpsert.mockResolvedValue({});
 
@@ -179,6 +184,7 @@ describe('syncVehiclesFromTesla', () => {
         climate_state: {},
       });
     mockWakeVehicle.mockResolvedValue(undefined);
+    mockGetFleetStatus.mockResolvedValue(true);
     mockVehicleUpsert.mockResolvedValue({});
     mockSettingsUpsert.mockResolvedValue({});
 
@@ -189,7 +195,7 @@ describe('syncVehiclesFromTesla', () => {
     expect(mockGetVehicleData).toHaveBeenCalledTimes(3); // initial + 2 polls
   }, 15_000);
 
-  it('sets virtualKeyPaired false when drive_state is missing', async () => {
+  it('sets virtualKeyPaired false when fleet_status reports key not paired', async () => {
     mockGetTeslaAccessToken.mockResolvedValue('test-token');
     mockListVehicles.mockResolvedValue([
       { id: 123, vehicle_id: 456, vin: 'VIN1', display_name: 'Car 1', state: 'online' },
@@ -199,8 +205,8 @@ describe('syncVehiclesFromTesla', () => {
       vin: 'VIN1',
       state: 'online',
       charge_state: { battery_level: 69 },
-      // No drive_state, vehicle_state, or climate_state — virtual key not paired
     });
+    mockGetFleetStatus.mockResolvedValue(false);
     mockVehicleUpsert.mockResolvedValue({});
     mockSettingsUpsert.mockResolvedValue({});
 
@@ -222,13 +228,40 @@ describe('syncVehiclesFromTesla', () => {
     );
   });
 
+  it('preserves existing virtualKeyPaired when fleet_status fails', async () => {
+    mockGetTeslaAccessToken.mockResolvedValue('test-token');
+    mockListVehicles.mockResolvedValue([
+      { id: 123, vehicle_id: 456, vin: 'VIN1', display_name: 'Car 1', state: 'online' },
+    ]);
+    mockGetVehicleData.mockResolvedValue({
+      id: 123,
+      vin: 'VIN1',
+      state: 'online',
+      charge_state: { battery_level: 80 },
+    });
+    // fleet_status fails → returns null
+    mockGetFleetStatus.mockResolvedValue(null);
+    // Existing DB record has virtualKeyPaired: true
+    mockVehicleFindUnique.mockResolvedValue({ virtualKeyPaired: true });
+    mockVehicleUpsert.mockResolvedValue({});
+    mockSettingsUpsert.mockResolvedValue({});
+
+    const count = await syncVehiclesFromTesla('user-1');
+
+    expect(count).toBe(1);
+    expect(mockVehicleUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({ virtualKeyPaired: true }),
+      }),
+    );
+  });
+
   it('sets Settings.virtualKeyPaired false when only some vehicles are paired', async () => {
     mockGetTeslaAccessToken.mockResolvedValue('test-token');
     mockListVehicles.mockResolvedValue([
       { id: 1, vehicle_id: 10, vin: 'VIN1', display_name: 'Car 1', state: 'online' },
       { id: 2, vehicle_id: 20, vin: 'VIN2', display_name: 'Car 2', state: 'online' },
     ]);
-    // First vehicle has full data (paired), second doesn't
     mockGetVehicleData
       .mockResolvedValueOnce({
         id: 1, vin: 'VIN1', state: 'online',
@@ -237,8 +270,9 @@ describe('syncVehiclesFromTesla', () => {
       .mockResolvedValueOnce({
         id: 2, vin: 'VIN2', state: 'online',
         charge_state: { battery_level: 50 },
-        // No drive_state — not paired
       });
+    // First vehicle paired, second not
+    mockGetFleetStatus.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
     mockVehicleUpsert.mockResolvedValue({});
     mockSettingsUpsert.mockResolvedValue({});
 
@@ -270,6 +304,7 @@ describe('syncVehiclesFromTesla', () => {
       climate_state: {},
     };
     mockGetVehicleData.mockResolvedValue(vehicleDataResponse);
+    mockGetFleetStatus.mockResolvedValue(true);
     // First upsert succeeds, second fails
     mockVehicleUpsert
       .mockResolvedValueOnce({})
@@ -301,6 +336,7 @@ describe('syncVehiclesFromTesla', () => {
       vehicle_state: {},
       climate_state: {},
     });
+    mockGetFleetStatus.mockResolvedValue(true);
     mockVehicleUpsert.mockResolvedValue({});
     mockSettingsUpsert.mockRejectedValue(new Error('Settings column missing'));
 

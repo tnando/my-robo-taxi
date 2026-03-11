@@ -3,6 +3,7 @@ import { getTeslaAccessToken } from '@/lib/tesla';
 import {
   listVehicles as teslaListVehicles,
   getVehicleData,
+  getFleetStatus,
   wakeVehicle,
   TeslaApiError,
 } from '@/lib/tesla-client';
@@ -94,6 +95,11 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         }
       }
 
+      // Use fleet_status to determine virtual key pairing (more reliable
+      // than checking if drive_state is present in the response).
+      // Returns null on error — preserve existing DB value in that case.
+      const keyPairedResult = await getFleetStatus(accessToken, listItem.id);
+
       // TODO(#127): remove diagnostic logging once virtual key issue is resolved
       const presentCategories = [
         vehicleData.charge_state ? 'charge_state' : null,
@@ -102,15 +108,28 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         vehicleData.vehicle_state ? 'vehicle_state' : null,
       ].filter(Boolean);
       console.info(
-        `[sync] Vehicle ${listItem.id} (${listItem.vin}): state=${vehicleData.state}, in_service=${vehicleData.in_service}, categories=[${presentCategories.join(', ')}]`,
+        `[sync] Vehicle ${listItem.id} (${listItem.vin}): state=${vehicleData.state}, in_service=${vehicleData.in_service}, key_paired=${keyPairedResult}, categories=[${presentCategories.join(', ')}]`,
       );
 
       const fullData = hasFullData(vehicleData);
       totalCount++;
-      if (fullData) pairedCount++;
 
       const upsertData = mapTeslaVehicleToUpsertData(listItem, vehicleData);
       const teslaVehicleId = upsertData.teslaVehicleId;
+
+      // When fleet_status fails (null), look up the existing DB value
+      // so we don't flip a paired vehicle back to unpaired on a transient error.
+      let keyPaired: boolean;
+      if (keyPairedResult !== null) {
+        keyPaired = keyPairedResult;
+      } else {
+        const existing = await prisma.vehicle.findUnique({
+          where: { teslaVehicleId },
+          select: { virtualKeyPaired: true },
+        });
+        keyPaired = existing?.virtualKeyPaired ?? false;
+      }
+      if (keyPaired) pairedCount++;
 
       // Skip lat/lng update when Tesla returns 0,0 (vehicle asleep/offline)
       // to preserve the last known position in the database.
@@ -124,7 +143,7 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         status: upsertData.status,
         chargeLevel: upsertData.chargeLevel,
         estimatedRange: upsertData.estimatedRange,
-        virtualKeyPaired: fullData,
+        virtualKeyPaired: keyPaired,
         lastUpdated: new Date(),
       };
 
@@ -150,7 +169,7 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
           userId,
           color: '',
           licensePlate: '',
-          virtualKeyPaired: fullData,
+          virtualKeyPaired: keyPaired,
           lastUpdated: new Date(),
         },
         update: updateData,
