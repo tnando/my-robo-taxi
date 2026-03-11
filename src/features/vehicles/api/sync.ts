@@ -3,6 +3,7 @@ import { getTeslaAccessToken } from '@/lib/tesla';
 import {
   listVehicles as teslaListVehicles,
   getVehicleData,
+  getFleetStatus,
   wakeVehicle,
   TeslaApiError,
 } from '@/lib/tesla-client';
@@ -95,6 +96,7 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
       }
 
       // TODO(#127): remove diagnostic logging once virtual key issue is resolved
+      await getFleetStatus(accessToken, listItem.id);
       const presentCategories = [
         vehicleData.charge_state ? 'charge_state' : null,
         vehicleData.climate_state ? 'climate_state' : null,

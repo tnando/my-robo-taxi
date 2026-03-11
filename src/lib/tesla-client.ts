@@ -173,6 +173,23 @@ export async function getVehicleData(
   return data.response;
 }
 
+// TODO(#127): remove once virtual key issue is resolved
+export async function getFleetStatus(
+  accessToken: string,
+  vehicleId: number,
+): Promise<void> {
+  try {
+    const res = await fetchWithRetry(
+      `${BASE_URL}/api/1/vehicles/${vehicleId}/fleet_status`,
+      { headers: authHeaders(accessToken) },
+    );
+    const data = await res.json();
+    console.info(`[tesla-client] fleet_status for ${vehicleId}: ${JSON.stringify(data)}`);
+  } catch (err) {
+    console.error(`[tesla-client] fleet_status for ${vehicleId} failed:`, err);
+  }
+}
+
 export async function wakeVehicle(
   accessToken: string,
   vehicleId: number,
