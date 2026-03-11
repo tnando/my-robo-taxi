@@ -169,8 +169,7 @@ export async function getVehicleData(
   // TODO(#127): remove diagnostic logging once virtual key issue is resolved
   const raw = data.response as unknown as Record<string, unknown>;
   const rawKeys = Object.keys(raw).sort().join(', ');
-  console.info(`[tesla-client] vehicle_data for ${vehicleId}: raw_keys=[${rawKeys}]`);
-  console.info(`[tesla-client] vehicle_data for ${vehicleId}: granular_access=${JSON.stringify(raw['granular_access'])}, access_type=${raw['access_type']}`);
+  console.info(`[tesla-client] vehicle_data for ${vehicleId}: raw_keys=[${rawKeys}] | granular_access=${JSON.stringify(raw['granular_access'])} | access_type=${String(raw['access_type'])}`);
   return data.response;
 }
 
