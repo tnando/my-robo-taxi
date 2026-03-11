@@ -166,9 +166,11 @@ export async function getVehicleData(
     { headers: authHeaders(accessToken) },
   );
   const data = (await res.json()) as { response: TeslaVehicleData };
-  // TODO(#127): remove raw key logging once virtual key issue is resolved
-  const rawKeys = Object.keys(data.response).sort().join(', ');
+  // TODO(#127): remove diagnostic logging once virtual key issue is resolved
+  const raw = data.response as unknown as Record<string, unknown>;
+  const rawKeys = Object.keys(raw).sort().join(', ');
   console.info(`[tesla-client] vehicle_data for ${vehicleId}: raw_keys=[${rawKeys}]`);
+  console.info(`[tesla-client] vehicle_data for ${vehicleId}: granular_access=${JSON.stringify(raw['granular_access'])}, access_type=${raw['access_type']}`);
   return data.response;
 }
 
