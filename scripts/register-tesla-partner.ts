@@ -51,7 +51,7 @@ async function getPartnerToken(
       grant_type: 'client_credentials',
       client_id: clientId,
       client_secret: clientSecret,
-      scope: 'openid vehicle_device_data vehicle_location',
+      scope: 'openid vehicle_device_data vehicle_cmds vehicle_location',
       audience: 'https://fleet-api.prd.na.vn.cloud.tesla.com',
     }),
   });
