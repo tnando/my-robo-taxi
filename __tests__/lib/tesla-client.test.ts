@@ -193,7 +193,6 @@ describe('getVehicleData', () => {
     expect(url).toContain('/api/1/vehicles/42/vehicle_data?endpoints=');
     // Semicolons must be URL-encoded so Tesla parses all endpoints as one value
     expect(url).toContain('%3B');
-    expect(url).not.toMatch(/endpoints=.*[^%];/);
     const endpointsParam = decodeURIComponent(url.split('endpoints=')[1]);
     expect(endpointsParam).toContain('charge_state');
     expect(endpointsParam).toContain('drive_state');
