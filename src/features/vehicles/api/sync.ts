@@ -98,7 +98,7 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
       // Use fleet_status to determine virtual key pairing (more reliable
       // than checking if drive_state is present in the response).
       // Returns null on error — preserve existing DB value in that case.
-      const keyPairedResult = await getFleetStatus(accessToken, listItem.id);
+      const keyPairedResult = await getFleetStatus(accessToken, listItem.vin);
 
       // TODO(#127): remove diagnostic logging once virtual key issue is resolved
       const presentCategories = [

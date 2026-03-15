@@ -175,19 +175,25 @@ export async function getVehicleData(
 
 export async function getFleetStatus(
   accessToken: string,
-  vehicleId: number,
+  vin: string,
 ): Promise<boolean | null> {
   try {
     const res = await fetchWithRetry(
-      `${BASE_URL}/api/1/vehicles/${vehicleId}/fleet_status`,
-      { headers: authHeaders(accessToken) },
+      `${BASE_URL}/api/1/vehicles/fleet_status`,
+      {
+        method: 'POST',
+        headers: authHeaders(accessToken),
+        body: JSON.stringify({ vins: [vin] }),
+      },
     );
-    const data = (await res.json()) as { response?: { key_paired?: boolean } };
+    const data = (await res.json()) as {
+      response?: { [vin: string]: { key_paired?: boolean } };
+    };
     // TODO(#127): remove diagnostic logging once virtual key issue is resolved
-    console.info(`[tesla-client] fleet_status for ${vehicleId}: ${JSON.stringify(data)}`);
-    return data.response?.key_paired === true;
+    console.info(`[tesla-client] fleet_status for ${vin}: ${JSON.stringify(data)}`);
+    return data.response?.[vin]?.key_paired === true;
   } catch (err) {
-    console.error(`[tesla-client] fleet_status for ${vehicleId} failed:`, err);
+    console.error(`[tesla-client] fleet_status for ${vin} failed:`, err);
     return null; // Unknown — caller should preserve existing DB value
   }
 }
