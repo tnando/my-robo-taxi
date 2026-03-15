@@ -166,29 +166,31 @@ export async function getVehicleData(
     { headers: authHeaders(accessToken) },
   );
   const data = (await res.json()) as { response: TeslaVehicleData };
-  // TODO(#127): remove diagnostic logging once virtual key issue is resolved
-  const raw = data.response as unknown as Record<string, unknown>;
-  const rawKeys = Object.keys(raw).sort().join(', ');
-  console.info(`[tesla-client] vehicle_data for ${vehicleId}: raw_keys=[${rawKeys}] | granular_access=${JSON.stringify(raw['granular_access'])} | access_type=${String(raw['access_type'])}`);
   return data.response;
+}
+
+export interface FleetStatusResult {
+  keyPaired: boolean | null;
+  raw: string;
 }
 
 export async function getFleetStatus(
   accessToken: string,
   vehicleId: number,
-): Promise<boolean | null> {
+): Promise<FleetStatusResult> {
   try {
     const res = await fetchWithRetry(
       `${BASE_URL}/api/1/vehicles/${vehicleId}/fleet_status`,
       { headers: authHeaders(accessToken) },
     );
     const data = (await res.json()) as { response?: { key_paired?: boolean } };
-    // TODO(#127): remove diagnostic logging once virtual key issue is resolved
-    console.info(`[tesla-client] fleet_status for ${vehicleId}: ${JSON.stringify(data)}`);
-    return data.response?.key_paired === true;
+    return {
+      keyPaired: data.response?.key_paired === true,
+      raw: JSON.stringify(data),
+    };
   } catch (err) {
-    console.error(`[tesla-client] fleet_status for ${vehicleId} failed:`, err);
-    return null; // Unknown — caller should preserve existing DB value
+    const msg = err instanceof Error ? err.message : String(err);
+    return { keyPaired: null, raw: `error: ${msg}` };
   }
 }
 

@@ -98,7 +98,8 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
       // Use fleet_status to determine virtual key pairing (more reliable
       // than checking if drive_state is present in the response).
       // Returns null on error — preserve existing DB value in that case.
-      const keyPairedResult = await getFleetStatus(accessToken, listItem.id);
+      const fleetStatus = await getFleetStatus(accessToken, listItem.id);
+      const keyPairedResult = fleetStatus.keyPaired;
 
       // TODO(#127): remove diagnostic logging once virtual key issue is resolved
       const presentCategories = [
@@ -108,7 +109,7 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         vehicleData.vehicle_state ? 'vehicle_state' : null,
       ].filter(Boolean);
       console.info(
-        `[sync] Vehicle ${listItem.id} (${listItem.vin}): state=${vehicleData.state}, in_service=${vehicleData.in_service}, key_paired=${keyPairedResult}, categories=[${presentCategories.join(', ')}]`,
+        `[sync] Vehicle ${listItem.id} (${listItem.vin}): state=${vehicleData.state}, in_service=${vehicleData.in_service}, categories=[${presentCategories.join(', ')}] | fleet_status=${fleetStatus.raw}`,
       );
 
       const fullData = hasFullData(vehicleData);

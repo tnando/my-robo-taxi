@@ -139,7 +139,7 @@ describe('syncVehiclesFromTesla', () => {
       vehicle_state: {},
       climate_state: {},
     });
-    mockGetFleetStatus.mockResolvedValue(true);
+    mockGetFleetStatus.mockResolvedValue({ keyPaired: true, raw: '{}' });
     mockVehicleUpsert.mockResolvedValue({});
     mockSettingsUpsert.mockResolvedValue({});
 
@@ -184,7 +184,7 @@ describe('syncVehiclesFromTesla', () => {
         climate_state: {},
       });
     mockWakeVehicle.mockResolvedValue(undefined);
-    mockGetFleetStatus.mockResolvedValue(true);
+    mockGetFleetStatus.mockResolvedValue({ keyPaired: true, raw: '{}' });
     mockVehicleUpsert.mockResolvedValue({});
     mockSettingsUpsert.mockResolvedValue({});
 
@@ -206,7 +206,7 @@ describe('syncVehiclesFromTesla', () => {
       state: 'online',
       charge_state: { battery_level: 69 },
     });
-    mockGetFleetStatus.mockResolvedValue(false);
+    mockGetFleetStatus.mockResolvedValue({ keyPaired: false, raw: '{}' });
     mockVehicleUpsert.mockResolvedValue({});
     mockSettingsUpsert.mockResolvedValue({});
 
@@ -240,7 +240,7 @@ describe('syncVehiclesFromTesla', () => {
       charge_state: { battery_level: 80 },
     });
     // fleet_status fails → returns null
-    mockGetFleetStatus.mockResolvedValue(null);
+    mockGetFleetStatus.mockResolvedValue({ keyPaired: null, raw: 'error: test' });
     // Existing DB record has virtualKeyPaired: true
     mockVehicleFindUnique.mockResolvedValue({ virtualKeyPaired: true });
     mockVehicleUpsert.mockResolvedValue({});
@@ -272,7 +272,7 @@ describe('syncVehiclesFromTesla', () => {
         charge_state: { battery_level: 50 },
       });
     // First vehicle paired, second not
-    mockGetFleetStatus.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    mockGetFleetStatus.mockResolvedValueOnce({ keyPaired: true, raw: '{}' }).mockResolvedValueOnce({ keyPaired: false, raw: '{}' });
     mockVehicleUpsert.mockResolvedValue({});
     mockSettingsUpsert.mockResolvedValue({});
 
@@ -304,7 +304,7 @@ describe('syncVehiclesFromTesla', () => {
       climate_state: {},
     };
     mockGetVehicleData.mockResolvedValue(vehicleDataResponse);
-    mockGetFleetStatus.mockResolvedValue(true);
+    mockGetFleetStatus.mockResolvedValue({ keyPaired: true, raw: '{}' });
     // First upsert succeeds, second fails
     mockVehicleUpsert
       .mockResolvedValueOnce({})
@@ -336,7 +336,7 @@ describe('syncVehiclesFromTesla', () => {
       vehicle_state: {},
       climate_state: {},
     });
-    mockGetFleetStatus.mockResolvedValue(true);
+    mockGetFleetStatus.mockResolvedValue({ keyPaired: true, raw: '{}' });
     mockVehicleUpsert.mockResolvedValue({});
     mockSettingsUpsert.mockRejectedValue(new Error('Settings column missing'));
 
