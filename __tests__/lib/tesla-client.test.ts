@@ -169,7 +169,7 @@ describe('listVehicles', () => {
 // ─── getVehicleData ──────────────────────────────────────────────────────────
 
 describe('getVehicleData', () => {
-  it('calls correct endpoint with endpoints query param', async () => {
+  it('calls correct endpoint with URL-encoded endpoints query param', async () => {
     const vehicleData = {
       id: 1,
       vin: 'VIN1',
@@ -189,15 +189,15 @@ describe('getVehicleData', () => {
 
     await getVehicleData('test-token', 42);
 
-    expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/1/vehicles/42/vehicle_data?endpoints='),
-      expect.anything(),
-    );
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(url).toContain('charge_state');
-    expect(url).toContain('drive_state');
-    expect(url).toContain('vehicle_state');
-    expect(url).toContain('climate_state');
+    expect(url).toContain('/api/1/vehicles/42/vehicle_data?endpoints=');
+    // Semicolons must be URL-encoded so Tesla parses all endpoints as one value
+    expect(url).toContain('%3B');
+    const endpointsParam = decodeURIComponent(url.split('endpoints=')[1]);
+    expect(endpointsParam).toContain('charge_state');
+    expect(endpointsParam).toContain('drive_state');
+    expect(endpointsParam).toContain('vehicle_state');
+    expect(endpointsParam).toContain('climate_state');
   });
 });
 
@@ -210,7 +210,10 @@ describe('getFleetStatus', () => {
       vi.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({
-          response: { '5YJSA1E26HF123456': { key_paired: true } },
+          response: {
+            key_paired_vins: ['5YJSA1E26HF123456'],
+            unpaired_vins: [],
+          },
         }),
       }),
     );
@@ -227,13 +230,16 @@ describe('getFleetStatus', () => {
     );
   });
 
-  it('returns false when key_paired is false', async () => {
+  it('returns false when VIN is in unpaired_vins', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({
-          response: { 'VIN1': { key_paired: false } },
+          response: {
+            key_paired_vins: [],
+            unpaired_vins: ['VIN1'],
+          },
         }),
       }),
     );
