@@ -53,7 +53,12 @@ vi.mock('@/lib/tesla-mapper', () => ({
   }),
 }));
 
-const mockVehicleUpsert = vi.fn();
+const mockDetectAndRecordDrive = vi.fn();
+vi.mock('@/lib/drive-detection', () => ({
+  detectAndRecordDrive: (...args: unknown[]) => mockDetectAndRecordDrive(...args),
+}));
+
+const mockVehicleUpsert = vi.fn().mockResolvedValue({ id: 'vehicle-1' });
 const mockVehicleFindUnique = vi.fn();
 const mockVehicleFindFirst = vi.fn();
 const mockVehicleFindMany = vi.fn();
@@ -143,7 +148,7 @@ describe('syncVehiclesFromTesla', () => {
       climate_state: {},
     });
     mockGetFleetStatus.mockResolvedValue(true);
-    mockVehicleUpsert.mockResolvedValue({});
+    mockVehicleUpsert.mockResolvedValue({ id: 'vehicle-1' });
     mockSettingsUpsert.mockResolvedValue({});
 
     const count = await syncVehiclesFromTesla('user-1');
@@ -188,7 +193,7 @@ describe('syncVehiclesFromTesla', () => {
       });
     mockWakeVehicle.mockResolvedValue(undefined);
     mockGetFleetStatus.mockResolvedValue(true);
-    mockVehicleUpsert.mockResolvedValue({});
+    mockVehicleUpsert.mockResolvedValue({ id: 'vehicle-1' });
     mockSettingsUpsert.mockResolvedValue({});
 
     const count = await syncVehiclesFromTesla('user-1');
@@ -210,7 +215,7 @@ describe('syncVehiclesFromTesla', () => {
       charge_state: { battery_level: 69 },
     });
     mockGetFleetStatus.mockResolvedValue(false);
-    mockVehicleUpsert.mockResolvedValue({});
+    mockVehicleUpsert.mockResolvedValue({ id: 'vehicle-1' });
     mockSettingsUpsert.mockResolvedValue({});
 
     const count = await syncVehiclesFromTesla('user-1');
@@ -246,7 +251,7 @@ describe('syncVehiclesFromTesla', () => {
     mockGetFleetStatus.mockResolvedValue(null);
     // Existing DB record has virtualKeyPaired: true
     mockVehicleFindUnique.mockResolvedValue({ virtualKeyPaired: true });
-    mockVehicleUpsert.mockResolvedValue({});
+    mockVehicleUpsert.mockResolvedValue({ id: 'vehicle-1' });
     mockSettingsUpsert.mockResolvedValue({});
 
     const count = await syncVehiclesFromTesla('user-1');
@@ -276,7 +281,7 @@ describe('syncVehiclesFromTesla', () => {
       });
     // First vehicle paired, second not
     mockGetFleetStatus.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
-    mockVehicleUpsert.mockResolvedValue({});
+    mockVehicleUpsert.mockResolvedValue({ id: 'vehicle-1' });
     mockSettingsUpsert.mockResolvedValue({});
 
     const count = await syncVehiclesFromTesla('user-1');
@@ -310,7 +315,7 @@ describe('syncVehiclesFromTesla', () => {
     mockGetFleetStatus.mockResolvedValue(true);
     // First upsert succeeds, second fails
     mockVehicleUpsert
-      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ id: 'vehicle-1' })
       .mockRejectedValueOnce(new Error('DB error'));
     mockSettingsUpsert.mockResolvedValue({});
 
@@ -340,7 +345,7 @@ describe('syncVehiclesFromTesla', () => {
       climate_state: {},
     });
     mockGetFleetStatus.mockResolvedValue(true);
-    mockVehicleUpsert.mockResolvedValue({});
+    mockVehicleUpsert.mockResolvedValue({ id: 'vehicle-1' });
     mockSettingsUpsert.mockRejectedValue(new Error('Settings column missing'));
 
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
