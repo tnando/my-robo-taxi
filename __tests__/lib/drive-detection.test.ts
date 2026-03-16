@@ -22,7 +22,10 @@ vi.mock('@/lib/prisma', () => ({
 
 import { detectAndRecordDrive } from '@/lib/drive-detection';
 import type { DriveDetectionInput } from '@/lib/drive-detection';
-import { haversineDistanceMiles, totalDistanceFromRoutePoints } from '@/lib/geo';
+import {
+  haversineDistanceMiles,
+  totalDistanceFromRoutePoints,
+} from '@/lib/geo';
 import type { RoutePoint } from '@/lib/geo';
 
 // ─── Setup ───────────────────────────────────────────────────────────────────
