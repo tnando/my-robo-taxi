@@ -1,3 +1,4 @@
+import { detectAndRecordDrive } from '@/lib/drive-detection';
 import { prisma } from '@/lib/prisma';
 import { getTeslaAccessToken } from '@/lib/tesla';
 import {
@@ -14,11 +15,7 @@ export const STALENESS_THRESHOLD_MS = 30_000;
 const WAKE_POLL_INTERVAL_MS = 3_000;
 const WAKE_MAX_ATTEMPTS = 5; // 5 polls × 3s = 15s max wait
 
-/**
- * Poll for vehicle data after a wake command.
- * Retries up to WAKE_MAX_ATTEMPTS times with WAKE_POLL_INTERVAL_MS between each.
- * Throws if the vehicle never wakes.
- */
+/** Poll for vehicle data after a wake command. Throws if vehicle never wakes. */
 async function pollForVehicleData(
   accessToken: string,
   vehicleId: number,
@@ -41,25 +38,19 @@ async function pollForVehicleData(
   );
 }
 
-/**
- * Check whether the Tesla API response includes drive_state,
- * which indicates the virtual key is paired with the vehicle.
- */
+/** Check whether Tesla response includes drive_state (virtual key paired). */
 function hasFullData(vehicleData: TeslaVehicleData): boolean {
   return vehicleData.drive_state !== undefined;
 }
 
 /**
  * Sync vehicles from Tesla Fleet API into the database.
- * Internal function — NOT a server action. Called by getVehicles() (which
- * validates the session) and by the auth linkAccount event.
- * Returns the count of successfully synced vehicles.
+ * Internal function — called by getVehicles() and auth linkAccount event.
  */
 export async function syncVehiclesFromTesla(userId: string): Promise<number> {
   const startTime = Date.now();
 
-  // Verify the user exists before syncing — a stale JWT may reference
-  // a deleted user (e.g. orphan cleanup from Tesla OAuth).
+  // Verify user exists — a stale JWT may reference a deleted user.
   const userExists = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true },
@@ -155,7 +146,7 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         updateData.longitude = upsertData.longitude;
       }
 
-      await prisma.vehicle.upsert({
+      const vehicle = await prisma.vehicle.upsert({
         where: { teslaVehicleId },
         create: {
           ...upsertData,
@@ -167,6 +158,28 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         },
         update: updateData,
       });
+
+      // Detect drive state transitions (start/update/end drives).
+      // Isolated in try/catch so drive detection errors don't block sync.
+      if (fullData) {
+        try {
+          await detectAndRecordDrive({
+            vehicleId: vehicle.id,
+            status: upsertData.status,
+            latitude: upsertData.latitude,
+            longitude: upsertData.longitude,
+            speed: upsertData.speed,
+            chargeLevel: upsertData.chargeLevel,
+            odometerMiles: upsertData.odometerMiles,
+          });
+        } catch (err) {
+          console.error(
+            `[sync] Drive detection failed for vehicle ${vehicle.id}:`,
+            err,
+          );
+        }
+      }
+
       syncedCount++;
     } catch (err) {
       console.error(`[sync] Failed to sync vehicle ${listItem.id} (step: fetch/upsert):`, err);
