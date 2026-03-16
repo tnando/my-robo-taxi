@@ -144,6 +144,10 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         updateData.interiorTemp = upsertData.interiorTemp;
         updateData.exteriorTemp = upsertData.exteriorTemp;
         updateData.odometerMiles = upsertData.odometerMiles;
+        // Navigation fields — set to null when no active route to clear stale data
+        updateData.destinationName = upsertData.destinationName;
+        updateData.etaMinutes = upsertData.etaMinutes;
+        updateData.tripDistanceRemaining = upsertData.tripDistanceRemaining;
       }
 
       if (hasValidCoords) {

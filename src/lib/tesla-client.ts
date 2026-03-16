@@ -31,6 +31,13 @@ export interface TeslaDriveState {
   heading: number | null;
   speed: number | null;
   shift_state: string | null;
+  active_route_destination?: string;
+  active_route_latitude?: number;
+  active_route_longitude?: number;
+  active_route_miles_to_arrival?: number;
+  active_route_minutes_to_arrival?: number;
+  active_route_energy_at_arrival?: number;
+  active_route_traffic_minutes_delay?: number;
 }
 
 export interface TeslaChargeState {

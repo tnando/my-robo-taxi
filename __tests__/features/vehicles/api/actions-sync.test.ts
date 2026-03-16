@@ -47,6 +47,9 @@ vi.mock('@/lib/tesla-mapper', () => ({
     interiorTemp: 72,
     exteriorTemp: 88,
     odometerMiles: 12847,
+    destinationName: null,
+    etaMinutes: null,
+    tripDistanceRemaining: null,
   }),
 }));
 
