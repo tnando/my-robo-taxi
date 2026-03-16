@@ -41,6 +41,7 @@ function createMockVehicle(): Vehicle {
     odometerMiles: 10000,
     fsdMilesToday: 0,
     virtualKeyPaired: true,
+    gearPosition: null,
   };
 }
 
