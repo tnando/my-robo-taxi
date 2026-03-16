@@ -4,15 +4,24 @@ import { Prisma } from '@prisma/client';
 import type { Drive as PrismaDrive } from '@prisma/client';
 
 import { auth } from '@/auth';
+import { normalizeRoutePoints } from '@/features/drives/api/normalize-route-points';
+import { formatLocation, formatTime } from '@/lib/format';
 import { prisma } from '@/lib/prisma';
-import type { Drive, DriveSortBy, LngLat } from '@/types/drive';
+import type { Drive, DriveSortBy } from '@/types/drive';
 
 /**
  * Map a Prisma Drive record to the shared Drive interface.
- * `routePoints` is stored as Json in Prisma — cast to LngLat[].
+ * Converts RoutePoint objects to LngLat tuples and formats time/location fields.
  */
 function mapDrive({ createdAt, routePoints, ...rest }: PrismaDrive): Drive {
-  return { ...rest, routePoints: routePoints as LngLat[] };
+  return {
+    ...rest,
+    startTime: formatTime(rest.startTime),
+    endTime: formatTime(rest.endTime),
+    startLocation: formatLocation(rest.startLocation),
+    endLocation: formatLocation(rest.endLocation),
+    routePoints: normalizeRoutePoints(routePoints),
+  };
 }
 
 /** Prisma orderBy clause for a given sort option. */

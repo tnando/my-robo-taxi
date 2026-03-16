@@ -98,3 +98,48 @@ export function formatOdometer(miles: number): string {
 export function formatEnergy(kwh: number): string {
   return `${kwh.toFixed(1)} kWh`;
 }
+
+/**
+ * Formats an ISO timestamp string to a local time string.
+ * @param isoString - ISO timestamp (e.g., "2026-03-16T21:07:56.573Z") or
+ *                    already-formatted time (e.g., "4:07 PM")
+ * @returns e.g., "4:07 PM"
+ */
+export function formatTime(isoString: string): string {
+  if (!isoString) return '';
+
+  // If it doesn't look like an ISO timestamp, return as-is (already formatted)
+  if (!isoString.includes('T')) return isoString;
+
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return isoString;
+
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
+}
+
+/**
+ * Formats a location string for display. If the string looks like raw
+ * coordinates ("lat,lng"), formats it as abbreviated coordinates.
+ * Otherwise returns it as-is (already a place name).
+ * @param location - Location name or "lat,lng" coordinate string
+ * @returns Human-readable location label
+ */
+export function formatLocation(location: string): string {
+  if (!location) return 'Unknown';
+
+  // Check if this looks like a "lat,lng" coordinate string
+  const parts = location.split(',');
+  if (parts.length === 2) {
+    const lat = parseFloat(parts[0]);
+    const lng = parseFloat(parts[1]);
+    if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+      return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    }
+  }
+
+  return location;
+}

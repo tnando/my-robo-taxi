@@ -37,7 +37,7 @@ export function DriveListItem({ drive }: DriveListItemProps) {
 
       {/* Time */}
       <p className="text-text-muted text-xs font-light mb-4">
-        {drive.startTime} — {drive.endTime}
+        {drive.endTime ? `${drive.startTime} — ${drive.endTime}` : `${drive.startTime} — In progress`}
       </p>
 
       {/* Stats row */}

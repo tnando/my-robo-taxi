@@ -9,6 +9,8 @@ import {
   formatTemperature,
   formatOdometer,
   formatEnergy,
+  formatTime,
+  formatLocation,
 } from '@/lib/format';
 
 /** Returns local date as YYYY-MM-DD (not UTC). */
@@ -122,5 +124,55 @@ describe('formatEnergy', () => {
 
   it('adds .0 for whole numbers', () => {
     expect(formatEnergy(3)).toBe('3.0 kWh');
+  });
+});
+
+describe('formatTime', () => {
+  it('formats an ISO timestamp to local time', () => {
+    // Use a fixed ISO string — the result depends on locale/timezone
+    const result = formatTime('2026-03-16T21:07:56.573Z');
+    // Should contain a colon and AM/PM indicator
+    expect(result).toMatch(/\d{1,2}:\d{2}\s?(AM|PM)/);
+  });
+
+  it('returns empty string for empty input', () => {
+    expect(formatTime('')).toBe('');
+  });
+
+  it('returns already-formatted time as-is', () => {
+    expect(formatTime('4:07 PM')).toBe('4:07 PM');
+  });
+
+  it('returns non-ISO strings as-is', () => {
+    expect(formatTime('2:15 PM')).toBe('2:15 PM');
+  });
+
+  it('handles invalid ISO strings gracefully', () => {
+    expect(formatTime('not-a-date')).toBe('not-a-date');
+  });
+});
+
+describe('formatLocation', () => {
+  it('returns place names as-is', () => {
+    expect(formatLocation('Thompson Hotel')).toBe('Thompson Hotel');
+  });
+
+  it('formats coordinate strings', () => {
+    expect(formatLocation('30.3250,-97.7380')).toBe('30.3250, -97.7380');
+  });
+
+  it('returns "Unknown" for empty input', () => {
+    expect(formatLocation('')).toBe('Unknown');
+  });
+
+  it('returns addresses with commas as-is', () => {
+    // Addresses have more than 2 comma-separated parts
+    expect(formatLocation('506 San Jacinto Blvd, Austin, TX')).toBe(
+      '506 San Jacinto Blvd, Austin, TX',
+    );
+  });
+
+  it('handles two-word place names without treating as coordinates', () => {
+    expect(formatLocation('Domain Northside')).toBe('Domain Northside');
   });
 });

@@ -12,7 +12,7 @@ import { DriveListItem } from './DriveListItem';
 
 /** Props for the DriveHistoryScreen component. */
 export interface DriveHistoryScreenProps {
-  vehicle: Vehicle;
+  vehicle: Vehicle | null;
   drives: Drive[];
 }
 
@@ -40,11 +40,13 @@ export function DriveHistoryScreen({ vehicle, drives }: DriveHistoryScreenProps)
       {/* Header */}
       <header className="px-6 pt-16 pb-8">
         <h1 className="text-2xl font-semibold text-text-primary tracking-tight">Drives</h1>
-        <p className="text-text-muted text-sm font-light mt-1">{vehicle.name}</p>
+        {vehicle && (
+          <p className="text-text-muted text-sm font-light mt-1">{vehicle.name}</p>
+        )}
       </header>
 
       {/* Active drive banner */}
-      {vehicle.status === 'driving' && (
+      {vehicle?.status === 'driving' && (
         <Link
           href="/"
           className="mx-6 mb-6 flex items-center gap-3 p-4 rounded-xl border border-status-driving/20 bg-status-driving/[0.05]"
@@ -78,18 +80,26 @@ export function DriveHistoryScreen({ vehicle, drives }: DriveHistoryScreenProps)
 
       {/* Drive list grouped by date */}
       <div className="px-6 space-y-8">
-        {Object.entries(groupedDrives).map(([dateLabel, dateDrives]) => (
-          <div key={dateLabel}>
-            <p className="text-text-muted text-xs font-medium uppercase tracking-wider mb-4">
-              {dateLabel}
+        {drives.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-text-muted text-sm font-light">
+              No drives recorded yet. Drives are detected automatically when your vehicle is in motion.
             </p>
-            <div className="space-y-3">
-              {dateDrives.map((drive) => (
-                <DriveListItem key={drive.id} drive={drive} />
-              ))}
-            </div>
           </div>
-        ))}
+        ) : (
+          Object.entries(groupedDrives).map(([dateLabel, dateDrives]) => (
+            <div key={dateLabel}>
+              <p className="text-text-muted text-xs font-medium uppercase tracking-wider mb-4">
+                {dateLabel}
+              </p>
+              <div className="space-y-3">
+                {dateDrives.map((drive) => (
+                  <DriveListItem key={drive.id} drive={drive} />
+                ))}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
