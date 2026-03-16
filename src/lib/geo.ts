@@ -3,12 +3,22 @@
  * Pure math — no side effects, no database access, no React.
  */
 
+import type { LngLat } from '@/types/drive';
+
 /** A single point along a drive route, stored in Drive.routePoints JSON. */
 export interface RoutePoint {
   lat: number;
   lng: number;
   timestamp: string;
   speed: number;
+}
+
+/**
+ * Convert an array of stored RoutePoint objects to [lng, lat] tuples
+ * for use with Mapbox/GeoJSON (which expects longitude-first ordering).
+ */
+export function routePointsToLngLat(points: RoutePoint[]): LngLat[] {
+  return points.map((p) => [p.lng, p.lat]);
 }
 
 /**
