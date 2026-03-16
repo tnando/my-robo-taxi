@@ -1,5 +1,5 @@
 import { signIn } from '@/auth';
-import { HomeScreen, HomeEmptyScreen, getCachedVehicles, getVehicles, syncVehicles } from '@/features/vehicles';
+import { HomeScreen, HomeEmptyScreen, HomeSyncingScreen, getCachedVehicles, getVehicles, syncVehicles } from '@/features/vehicles';
 import { getSettings, deferKeyPairing, shouldShowPairingModal, PairingModalTrigger } from '@/features/settings';
 import { MOCK_DRIVES } from '@/lib/mock-data';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -27,6 +27,11 @@ export default async function RootPage() {
   const vehicles = cachedVehicles.length === 0 ? await getVehicles() : cachedVehicles;
 
   if (vehicles.length === 0) {
+    // Tesla is linked but sync hasn't completed yet (race condition on OAuth redirect).
+    // Show a syncing state with polling instead of the empty "Add Your Tesla" screen.
+    if (settings?.teslaLinked) {
+      return <HomeSyncingScreen fetchVehicles={getCachedVehicles} onLinkTesla={handleLinkTesla} />;
+    }
     return <HomeEmptyScreen onLinkTesla={handleLinkTesla} />;
   }
 

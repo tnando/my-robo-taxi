@@ -7,6 +7,7 @@
 // Components
 export { HomeScreen } from './components/HomeScreen';
 export { HomeEmptyScreen } from './components/HomeEmptyScreen';
+export { HomeSyncingScreen } from './components/HomeSyncingScreen';
 export { SharedViewerScreen } from './components/SharedViewerScreen';
 
 // Server actions
