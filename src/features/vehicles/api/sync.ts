@@ -140,6 +140,7 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         updateData.model = upsertData.model;
         updateData.year = upsertData.year;
         updateData.speed = upsertData.speed;
+        updateData.gearPosition = upsertData.gearPosition;
         updateData.heading = upsertData.heading;
         updateData.interiorTemp = upsertData.interiorTemp;
         updateData.exteriorTemp = upsertData.exteriorTemp;

@@ -18,6 +18,7 @@ export interface TeslaVehicleUpsertData {
   estimatedRange: number;
   status: VehicleStatus;
   speed: number;
+  gearPosition: string | null;
   heading: number;
   latitude: number;
   longitude: number;
@@ -141,6 +142,7 @@ export function mapTeslaVehicleToUpsertData(
       drive_state.shift_state,
     ),
     speed: drive_state.speed ?? 0,
+    gearPosition: drive_state.shift_state ?? null,
     heading: drive_state.heading ?? 0,
     latitude: latitude ?? 0,
     longitude: longitude ?? 0,

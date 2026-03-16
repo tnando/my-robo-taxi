@@ -16,12 +16,18 @@ export const STATUS_CONFIG: StatusConfigMap = {
 
 /**
  * Returns a human-readable status message for a vehicle.
+ * Includes gear position context when available.
  * @param vehicle - The vehicle to describe
  */
 export function getStatusMessage(vehicle: Vehicle): string {
   switch (vehicle.status) {
-    case 'driving':
+    case 'driving': {
+      const gear = vehicle.gearPosition;
+      if (gear === 'R') {
+        return `Reversing — ${vehicle.speed} mph at ${vehicle.locationName}`;
+      }
       return `Driving — ${vehicle.speed} mph on ${vehicle.locationName}`;
+    }
     case 'parked':
       return `Parked at ${vehicle.locationName}`;
     case 'charging':

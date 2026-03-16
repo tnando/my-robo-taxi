@@ -3,6 +3,8 @@ import type { Vehicle } from '@/types/vehicle';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { getBatteryColor, getBatteryTextColor } from '@/lib/vehicle-helpers';
 
+import { GearIndicator } from './GearIndicator';
+
 /** Props for the ParkedPeekContent component. */
 export interface ParkedPeekContentProps {
   /** The parked/charging/offline vehicle. */
@@ -17,9 +19,12 @@ export interface ParkedPeekContentProps {
 export function ParkedPeekContent({ vehicle }: ParkedPeekContentProps) {
   return (
     <div className="px-6">
-      {/* Row 1: Vehicle name + status badge */}
+      {/* Row 1: Vehicle name + gear indicator + status badge */}
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-lg font-semibold text-text-primary">{vehicle.name}</h2>
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-lg font-semibold text-text-primary">{vehicle.name}</h2>
+          <GearIndicator gearPosition={vehicle.gearPosition} status={vehicle.status} />
+        </div>
         <StatusBadge status={vehicle.status} />
       </div>
 

@@ -3,6 +3,7 @@ import type { Drive } from '@/types/drive';
 
 import { StatusBadge } from '@/components/ui/StatusBadge';
 
+import { GearIndicator } from './GearIndicator';
 import { TripProgressBar } from './TripProgressBar';
 import { StatRow } from './StatRow';
 
@@ -27,9 +28,12 @@ export function DrivingPeekContent({
 }: DrivingPeekContentProps) {
   return (
     <div className="px-6">
-      {/* Vehicle name + status badge + destination */}
+      {/* Vehicle name + gear indicator + status badge */}
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-lg font-semibold text-text-primary">{vehicle.name}</h2>
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-lg font-semibold text-text-primary">{vehicle.name}</h2>
+          <GearIndicator gearPosition={vehicle.gearPosition} status={vehicle.status} />
+        </div>
         <StatusBadge status={vehicle.status} />
       </div>
       <p className="text-sm text-gold font-light mb-3">

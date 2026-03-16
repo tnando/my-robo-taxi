@@ -58,6 +58,7 @@ model Vehicle {
   estimatedRange   Int           @default(0)
   status           VehicleStatus @default(offline)
   speed            Int           @default(0)
+  gearPosition     String?
   heading          Int           @default(0)
   locationName     String        @default("")
   locationAddress  String        @default("")

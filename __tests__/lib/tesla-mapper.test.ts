@@ -190,10 +190,29 @@ describe('mapTeslaVehicleToUpsertData', () => {
     expect(result.estimatedRange).toBe(246);
     expect(result.status).toBe('driving');
     expect(result.speed).toBe(65);
+    expect(result.gearPosition).toBe('D');
     expect(result.heading).toBe(280);
     expect(result.latitude).toBe(30.325);
     expect(result.longitude).toBe(-97.738);
     expect(result.odometerMiles).toBe(12847);
+  });
+
+  it('maps gearPosition from shift_state', () => {
+    const parkedData: TeslaVehicleData = {
+      ...vehicleData,
+      drive_state: { ...vehicleData.drive_state!, shift_state: 'P', speed: 0 },
+    };
+    const result = mapTeslaVehicleToUpsertData(listItem, parkedData);
+    expect(result.gearPosition).toBe('P');
+  });
+
+  it('maps null gearPosition when shift_state is null', () => {
+    const nullShiftData: TeslaVehicleData = {
+      ...vehicleData,
+      drive_state: { ...vehicleData.drive_state!, shift_state: null, speed: 0 },
+    };
+    const result = mapTeslaVehicleToUpsertData(listItem, nullShiftData);
+    expect(result.gearPosition).toBeNull();
   });
 
   it('converts temperatures from Celsius to Fahrenheit', () => {

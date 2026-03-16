@@ -67,6 +67,7 @@ export function mapPrismaVehicleToVehicle(prismaVehicle: PrismaVehicleWithStops)
     estimatedRange: prismaVehicle.estimatedRange,
     status: toVehicleStatus(prismaVehicle.status),
     speed: prismaVehicle.speed,
+    gearPosition: prismaVehicle.gearPosition,
     heading: prismaVehicle.heading,
     locationName: prismaVehicle.locationName,
     locationAddress: prismaVehicle.locationAddress,

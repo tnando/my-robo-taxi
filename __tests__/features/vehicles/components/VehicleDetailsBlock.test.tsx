@@ -14,6 +14,7 @@ const vehicle: Vehicle = {
   estimatedRange: 250,
   status: 'parked',
   speed: 0,
+  gearPosition: null,
   heading: 0,
   locationName: 'Home',
   locationAddress: '123 Main St',

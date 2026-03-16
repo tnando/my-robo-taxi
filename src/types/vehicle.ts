@@ -20,6 +20,7 @@ export interface Vehicle {
   estimatedRange: number;
   status: VehicleStatus;
   speed: number;
+  gearPosition: string | null;
   heading: number;
   locationName: string;
   locationAddress: string;
