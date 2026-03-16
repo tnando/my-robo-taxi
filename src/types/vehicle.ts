@@ -4,6 +4,9 @@ export type VehicleStatus = 'driving' | 'parked' | 'charging' | 'offline' | 'in_
 /** Valid gear positions from Tesla drive_state.shift_state. */
 export type GearPosition = 'P' | 'R' | 'N' | 'D';
 
+/** Set of valid gear position strings for runtime validation at data boundaries. */
+export const VALID_GEARS = new Set<string>(['P', 'R', 'N', 'D']);
+
 /** A stop along a vehicle's active trip route. */
 export interface TripStop {
   name: string;

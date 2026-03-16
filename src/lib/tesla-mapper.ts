@@ -3,6 +3,7 @@
  * No side effects, no database access, no React.
  */
 
+import { VALID_GEARS } from '@/types/vehicle';
 import type { VehicleStatus, GearPosition } from '@/types/vehicle';
 import type { TeslaVehicleListItem, TeslaVehicleData } from '@/lib/tesla-client';
 
@@ -87,8 +88,6 @@ export function parseModelFromVin(vin: string): { model: string; year: number } 
 }
 
 // ─── Gear position ──────────────────────────────────────────────────────────
-
-const VALID_GEARS = new Set<string>(['P', 'R', 'N', 'D']);
 
 /** Narrows a raw Tesla shift_state string to a valid GearPosition or null. */
 export function parseGearPosition(shiftState: string | null): GearPosition | null {
