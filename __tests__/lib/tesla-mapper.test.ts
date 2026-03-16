@@ -300,4 +300,103 @@ describe('mapTeslaVehicleToUpsertData', () => {
     expect(result.longitude).toBe(0);
     expect(result.odometerMiles).toBe(0);
   });
+
+  // ─── Navigation / active_route_* fields ─────────────────────────────────────
+
+  it('sets navigation fields to null when no active route', () => {
+    const result = mapTeslaVehicleToUpsertData(listItem, vehicleData);
+
+    expect(result.destinationName).toBeNull();
+    expect(result.etaMinutes).toBeNull();
+    expect(result.tripDistanceRemaining).toBeNull();
+  });
+
+  it('maps active_route_* fields when navigation is active', () => {
+    const navData: TeslaVehicleData = {
+      ...vehicleData,
+      drive_state: {
+        ...vehicleData.drive_state!,
+        active_route_destination: 'Domain Northside',
+        active_route_latitude: 30.4015,
+        active_route_longitude: -97.7255,
+        active_route_miles_to_arrival: 8.7,
+        active_route_minutes_to_arrival: 14.3,
+        active_route_energy_at_arrival: 72.0,
+        active_route_traffic_minutes_delay: 2.1,
+      },
+    };
+
+    const result = mapTeslaVehicleToUpsertData(listItem, navData);
+
+    expect(result.destinationName).toBe('Domain Northside');
+    expect(result.etaMinutes).toBe(14);
+    expect(result.tripDistanceRemaining).toBe(8.7);
+  });
+
+  it('rounds etaMinutes to nearest integer', () => {
+    const navData: TeslaVehicleData = {
+      ...vehicleData,
+      drive_state: {
+        ...vehicleData.drive_state!,
+        active_route_destination: 'Airport',
+        active_route_minutes_to_arrival: 22.7,
+        active_route_miles_to_arrival: 15.2,
+      },
+    };
+
+    const result = mapTeslaVehicleToUpsertData(listItem, navData);
+
+    expect(result.etaMinutes).toBe(23);
+  });
+
+  it('handles active route with only destination (no ETA or distance)', () => {
+    const navData: TeslaVehicleData = {
+      ...vehicleData,
+      drive_state: {
+        ...vehicleData.drive_state!,
+        active_route_destination: 'Home',
+      },
+    };
+
+    const result = mapTeslaVehicleToUpsertData(listItem, navData);
+
+    expect(result.destinationName).toBe('Home');
+    expect(result.etaMinutes).toBeNull();
+    expect(result.tripDistanceRemaining).toBeNull();
+  });
+
+  it('normalizes empty destination string to null (dropped pin)', () => {
+    const navData: TeslaVehicleData = {
+      ...vehicleData,
+      drive_state: {
+        ...vehicleData.drive_state!,
+        active_route_destination: '',
+        active_route_miles_to_arrival: 3.2,
+        active_route_minutes_to_arrival: 8.0,
+      },
+    };
+
+    const result = mapTeslaVehicleToUpsertData(listItem, navData);
+
+    expect(result.destinationName).toBeNull();
+    expect(result.etaMinutes).toBe(8);
+    expect(result.tripDistanceRemaining).toBe(3.2);
+  });
+
+  it('clears navigation fields when drive_state is absent (asleep vehicle)', () => {
+    const asleepData: TeslaVehicleData = {
+      id: 123,
+      vehicle_id: 456,
+      vin: '5YJ3E1EA1PF000001',
+      display_name: 'Sleepy',
+      state: 'asleep',
+      in_service: false,
+    };
+
+    const result = mapTeslaVehicleToUpsertData(listItem, asleepData);
+
+    expect(result.destinationName).toBeNull();
+    expect(result.etaMinutes).toBeNull();
+    expect(result.tripDistanceRemaining).toBeNull();
+  });
 });

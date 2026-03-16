@@ -24,6 +24,9 @@ export interface TeslaVehicleUpsertData {
   interiorTemp: number;
   exteriorTemp: number;
   odometerMiles: number;
+  destinationName: string | null;
+  etaMinutes: number | null;
+  tripDistanceRemaining: number | null;
 }
 
 // ─── Status mapping ──────────────────────────────────────────────────────────
@@ -107,6 +110,21 @@ export function mapTeslaVehicleToUpsertData(
   const latitude = drive_state.latitude ?? null;
   const longitude = drive_state.longitude ?? null;
 
+  // Navigation fields — only present when the driver has an active route.
+  // When absent, set to null so the sync layer clears stale navigation data.
+  const hasActiveRoute = drive_state.active_route_destination !== undefined;
+  // Use || instead of ?? to normalize empty strings to null
+  // (Tesla may return "" for unnamed destinations like dropped pins)
+  const destinationName = hasActiveRoute
+    ? (drive_state.active_route_destination || null)
+    : null;
+  const etaMinutes = hasActiveRoute && drive_state.active_route_minutes_to_arrival !== undefined
+    ? Math.round(drive_state.active_route_minutes_to_arrival)
+    : null;
+  const tripDistanceRemaining = hasActiveRoute && drive_state.active_route_miles_to_arrival !== undefined
+    ? drive_state.active_route_miles_to_arrival
+    : null;
+
   return {
     teslaVehicleId: String(listItem.id),
     vin: vehicleData.vin,
@@ -129,5 +147,8 @@ export function mapTeslaVehicleToUpsertData(
     interiorTemp: celsiusToFahrenheit(climate_state.inside_temp ?? 20),
     exteriorTemp: celsiusToFahrenheit(climate_state.outside_temp ?? 20),
     odometerMiles: Math.round(vehicle_state.odometer ?? 0),
+    destinationName,
+    etaMinutes,
+    tripDistanceRemaining,
   };
 }
