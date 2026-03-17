@@ -15,6 +15,7 @@ import type { Prisma } from '@prisma/client';
 import { DRIVE_IN_PROGRESS_SENTINEL } from '@/lib/drive-utils';
 import { totalDistanceFromRoutePoints } from '@/lib/geo';
 import type { RoutePoint } from '@/lib/geo';
+import { reverseGeocode } from '@/lib/geocode';
 import { prisma } from '@/lib/prisma';
 import type { VehicleStatus } from '@/types/vehicle';
 
@@ -91,14 +92,18 @@ async function startDrive(input: DriveDetectionInput): Promise<void> {
     timestamp: now.toISOString(), speed: input.speed,
   };
 
+  // Reverse geocode start location (non-blocking — falls back to coords)
+  const geo = await reverseGeocode(input.latitude, input.longitude);
+  const coordString = `${input.latitude},${input.longitude}`;
+
   await prisma.drive.create({
     data: {
       vehicleId: input.vehicleId,
       date: now.toISOString().split('T')[0],
       startTime: now.toISOString(),
       endTime: DRIVE_IN_PROGRESS_SENTINEL, // Signals "in progress"
-      startLocation: `${input.latitude},${input.longitude}`,
-      startAddress: '', // Can be reverse geocoded later
+      startLocation: geo?.placeName || coordString,
+      startAddress: geo?.address || '',
       endLocation: '',
       endAddress: '',
       distanceMiles: 0,
@@ -190,16 +195,25 @@ async function endDrive(
   const chargeUsed = Math.max(0, drive.startChargeLevel - input.chargeLevel);
   const energyUsedKwh = Math.round(chargeUsed * KWH_PER_PERCENT * 10) / 10;
 
-  const endLocation = (input.latitude !== 0 || input.longitude !== 0)
-    ? `${input.latitude},${input.longitude}`
-    : drive.startLocation;
+  const hasEndCoords = input.latitude !== 0 || input.longitude !== 0;
+
+  // Reverse geocode end location (non-blocking — falls back to coords)
+  let endLocation: string;
+  let endAddress = '';
+  if (hasEndCoords) {
+    const geo = await reverseGeocode(input.latitude, input.longitude);
+    endLocation = geo?.placeName || `${input.latitude},${input.longitude}`;
+    endAddress = geo?.address || '';
+  } else {
+    endLocation = drive.startLocation;
+  }
 
   await prisma.drive.update({
     where: { id: driveId },
     data: {
       endTime: now.toISOString(),
       endLocation,
-      endAddress: '', // Can be reverse geocoded later
+      endAddress,
       distanceMiles: Math.round(distanceMiles * 100) / 100,
       durationMinutes,
       avgSpeedMph,

@@ -20,6 +20,12 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
+const mockReverseGeocode = vi.fn();
+
+vi.mock('@/lib/geocode', () => ({
+  reverseGeocode: (...args: unknown[]) => mockReverseGeocode(...args),
+}));
+
 import { detectAndRecordDrive } from '@/lib/drive-detection';
 import type { DriveDetectionInput } from '@/lib/drive-detection';
 import {
@@ -33,6 +39,11 @@ import type { RoutePoint } from '@/lib/geo';
 beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(console, 'log').mockImplementation(() => {});
+  // Default: geocoding succeeds
+  mockReverseGeocode.mockResolvedValue({
+    placeName: 'Test Place',
+    address: 'Test Place, 123 Main St, Austin, TX',
+  });
 });
 
 // ─── haversineDistanceMiles ──────────────────────────────────────────────────
@@ -117,7 +128,8 @@ describe('detectAndRecordDrive', () => {
       expect(mockDriveCreate).toHaveBeenCalledTimes(1);
       const createArg = mockDriveCreate.mock.calls[0][0];
       expect(createArg.data.vehicleId).toBe('vehicle-1');
-      expect(createArg.data.startLocation).toBe('30.325,-97.738');
+      expect(createArg.data.startLocation).toBe('Test Place');
+      expect(createArg.data.startAddress).toBe('Test Place, 123 Main St, Austin, TX');
       expect(createArg.data.startChargeLevel).toBe(80);
       expect(createArg.data.maxSpeedMph).toBe(45);
       expect(createArg.data.endTime).toBe(''); // In-progress marker
@@ -225,7 +237,8 @@ describe('detectAndRecordDrive', () => {
       expect(updateArg.where.id).toBe('drive-1');
       expect(updateArg.data.endTime).toBeTruthy();
       expect(updateArg.data.endTime).not.toBe('');
-      expect(updateArg.data.endLocation).toBe('30.4,-97.7');
+      expect(updateArg.data.endLocation).toBe('Test Place');
+      expect(updateArg.data.endAddress).toBe('Test Place, 123 Main St, Austin, TX');
       expect(updateArg.data.endChargeLevel).toBe(75);
       expect(updateArg.data.durationMinutes).toBeGreaterThanOrEqual(29);
       expect(updateArg.data.durationMinutes).toBeLessThanOrEqual(31);
@@ -388,6 +401,67 @@ describe('detectAndRecordDrive', () => {
       expect(updateArg.data.endLocation).toBe('30.300,-97.750');
       // Should NOT have appended a 0,0 route point
       expect(updateArg.data.routePoints).toHaveLength(2);
+      // Should NOT call geocode for 0,0
+      expect(mockReverseGeocode).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('geocoding fallback', () => {
+    it('falls back to raw coordinates when geocoding returns null on start', async () => {
+      mockDriveFindFirst.mockResolvedValue(null);
+      mockDriveCreate.mockResolvedValue({ id: 'drive-1' });
+      mockReverseGeocode.mockResolvedValue(null);
+
+      await detectAndRecordDrive(baseDrivingInput);
+
+      const createArg = mockDriveCreate.mock.calls[0][0];
+      expect(createArg.data.startLocation).toBe('30.325,-97.738');
+      expect(createArg.data.startAddress).toBe('');
+    });
+
+    it('falls back to raw coordinates when geocoding returns null on end', async () => {
+      const startTime = new Date(Date.now() - 30 * 60_000);
+      const activeDrive = {
+        id: 'drive-geo-fail',
+        vehicleId: 'vehicle-1',
+        startTime: startTime.toISOString(),
+        endTime: '',
+        startLocation: 'Thompson Hotel',
+        startChargeLevel: 85,
+        maxSpeedMph: 65,
+        routePoints: [
+          { lat: 30.300, lng: -97.750, timestamp: startTime.toISOString(), speed: 45 },
+          { lat: 30.350, lng: -97.720, timestamp: new Date(Date.now() - 15 * 60_000).toISOString(), speed: 65 },
+        ],
+      };
+      mockDriveFindFirst.mockResolvedValue(activeDrive);
+      mockDriveFindUnique.mockResolvedValue(activeDrive);
+      mockDriveUpdate.mockResolvedValue({});
+      mockReverseGeocode.mockResolvedValue(null);
+
+      await detectAndRecordDrive(baseParkedInput);
+
+      const updateArg = mockDriveUpdate.mock.calls[0][0];
+      expect(updateArg.data.endLocation).toBe('30.4,-97.7');
+      expect(updateArg.data.endAddress).toBe('');
+    });
+
+    it('uses geocoded place name for start and end locations', async () => {
+      // Start drive with geocoding
+      mockDriveFindFirst.mockResolvedValue(null);
+      mockDriveCreate.mockResolvedValue({ id: 'drive-geo' });
+      mockReverseGeocode.mockResolvedValue({
+        placeName: 'Domain Northside',
+        address: 'Domain Northside, 11600 Domain Dr, Austin, TX 78758',
+      });
+
+      await detectAndRecordDrive(baseDrivingInput);
+
+      const createArg = mockDriveCreate.mock.calls[0][0];
+      expect(createArg.data.startLocation).toBe('Domain Northside');
+      expect(createArg.data.startAddress).toBe(
+        'Domain Northside, 11600 Domain Dr, Austin, TX 78758',
+      );
     });
   });
 });
