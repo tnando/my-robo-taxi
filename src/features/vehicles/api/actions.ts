@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { SignJWT } from 'jose';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -8,6 +9,29 @@ import type { Vehicle } from '@/types/vehicle';
 
 import { syncVehiclesFromTesla, STALENESS_THRESHOLD_MS } from './sync';
 import { mapPrismaVehicleToVehicle } from './vehicle-mappers';
+
+/** Shared secret for signing WebSocket auth tokens. */
+const WS_TOKEN_SECRET = new TextEncoder().encode(
+  process.env.AUTH_SECRET ?? '',
+);
+
+/**
+ * Generate a short-lived signed JWT for WebSocket authentication.
+ * The token contains the user ID and expires in 1 hour.
+ * Returns null if the user is not authenticated.
+ */
+export async function generateWsToken(): Promise<string | null> {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+
+  const token = await new SignJWT({ sub: session.user.id })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('1h')
+    .sign(WS_TOKEN_SECRET);
+
+  return token;
+}
 
 /**
  * Fetch all vehicles for the currently authenticated user.

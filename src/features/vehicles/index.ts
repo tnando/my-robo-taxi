@@ -11,7 +11,7 @@ export { HomeSyncingScreen } from './components/HomeSyncingScreen';
 export { SharedViewerScreen } from './components/SharedViewerScreen';
 
 // Server actions
-export { getVehicles, getCachedVehicles, syncVehicles, getVehicleById } from './api/actions';
+export { getVehicles, getCachedVehicles, syncVehicles, getVehicleById, generateWsToken } from './api/actions';
 
 // Types (used by app/ pages for data passing)
 export type { VehicleWithTrip, SheetState } from './types';
