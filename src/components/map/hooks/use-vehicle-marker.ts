@@ -5,6 +5,7 @@ import mapboxgl from 'mapbox-gl';
 
 import type { LngLat } from '@/types/drive';
 import { MAPBOX_GOLD } from '@/lib/mapbox';
+import { shortestRotation } from '@/lib/map-math';
 
 /** Duration of the position interpolation (ms). Matches the telemetry
  *  update interval so the marker glides continuously without pausing. */
@@ -87,13 +88,9 @@ export function useVehicleMarker(
       const lat = fromPosRef.current[1] + (toPosRef.current[1] - fromPosRef.current[1]) * t;
       markerRef.current?.setLngLat([lng, lat]);
 
-      // Interpolate heading (shortest rotation)
-      const fromH = fromHeadingRef.current;
-      let toH = toHeadingRef.current;
-      const diff = toH - fromH;
-      if (diff > 180) toH -= 360;
-      else if (diff < -180) toH += 360;
-      const h = fromH + (toH - fromH) * t;
+      // Interpolate heading via shortest rotation path
+      const targetH = shortestRotation(fromHeadingRef.current, toHeadingRef.current);
+      const h = fromHeadingRef.current + (targetH - fromHeadingRef.current) * t;
 
       if (markerElRef.current) {
         const svg = markerElRef.current.querySelector('svg');
