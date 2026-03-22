@@ -46,6 +46,24 @@ export function useMapInstance(
     map.current = m;
     m.on('load', () => {
       m.resize();
+
+      // 3D building extrusions — visible when map is tilted (heading-up mode)
+      if (!m.getLayer('3d-buildings')) {
+        m.addLayer({
+          id: '3d-buildings',
+          source: 'composite',
+          'source-layer': 'building',
+          type: 'fill-extrusion',
+          minzoom: 14,
+          paint: {
+            'fill-extrusion-color': '#1a1a2e',
+            'fill-extrusion-height': ['get', 'height'],
+            'fill-extrusion-base': ['get', 'min_height'],
+            'fill-extrusion-opacity': 0.6,
+          },
+        });
+      }
+
       setMapLoaded(true);
     });
 
