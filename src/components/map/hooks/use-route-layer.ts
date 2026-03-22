@@ -87,7 +87,9 @@ export function useRouteLayer(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, mapLoaded, showRoute, routeCoordinates]);
 
-  // ── Update route data in-place on vehicle position change ───────────────
+  // ── Set full route data once when routeCoordinates changes ──────────────
+  // The route is displayed as a single polyline (no two-tone split per tick)
+  // to avoid flicker from calling setData on every position update.
   useEffect(() => {
     const m = map.current;
     if (!m || !mapLoaded || !showRoute || !routeCoordinates || routeCoordinates.length < 2) {
@@ -96,20 +98,21 @@ export function useRouteLayer(
 
     if (!sourcesAddedRef.current) return;
 
-    const { completed, remaining } = splitRoute(routeCoordinates, vehiclePosition);
-    setRemainingRoute(remaining.length >= 2 ? remaining : undefined);
-
+    // Show the full route on the remaining layer (bright), clear completed
     const completedSource = m.getSource('route-completed') as mapboxgl.GeoJSONSource | undefined;
     const remainingSource = m.getSource('route-remaining') as mapboxgl.GeoJSONSource | undefined;
 
     if (completedSource) {
-      completedSource.setData(completed.length >= 2 ? lineFeature(completed) : EMPTY_LINE);
+      completedSource.setData(EMPTY_LINE);
     }
     if (remainingSource) {
-      remainingSource.setData(remaining.length >= 2 ? lineFeature(remaining) : EMPTY_LINE);
+      remainingSource.setData(lineFeature(routeCoordinates));
     }
+
+    // Set remaining route for route-overview mode fitBounds
+    setRemainingRoute(routeCoordinates);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, mapLoaded, showRoute, routeCoordinates, vehiclePosition[0], vehiclePosition[1]]);
+  }, [map, mapLoaded, showRoute, routeCoordinates]);
 
   return { remainingRoute };
 }
