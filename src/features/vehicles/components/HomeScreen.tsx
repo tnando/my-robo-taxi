@@ -71,7 +71,13 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken }: HomeScreenProp
   );
 
   const isDriving = vehicle.status === 'driving';
-  const routePoints = currentDrive?.routePoints;
+
+  // Prefer live route from WebSocket (decoded RouteLine from Tesla nav).
+  // Fall back to stored route points from the database Drive record.
+  const liveRoute = 'routeCoordinates' in vehicle
+    ? (vehicle as unknown as { routeCoordinates: [number, number][] }).routeCoordinates
+    : undefined;
+  const routePoints = (liveRoute && liveRoute.length >= 2) ? liveRoute : currentDrive?.routePoints;
 
   // Trip progress (0-1)
   const tripProgress =
