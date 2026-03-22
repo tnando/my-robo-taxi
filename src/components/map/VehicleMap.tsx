@@ -8,7 +8,7 @@ import { MAPBOX_DEFAULT_CENTER, MAPBOX_DEFAULT_ZOOM, MAPBOX_GOLD } from '@/lib/m
 import { useMapInstance } from './hooks/use-map-instance';
 import { useVehicleMarker } from './hooks/use-vehicle-marker';
 import { useRouteLayer } from './hooks/use-route-layer';
-import { useMapRecenter } from './hooks/use-map-recenter';
+import { useMapFollow } from './hooks/use-map-follow';
 
 /** Props for the VehicleMap component. */
 export interface VehicleMapProps {
@@ -69,7 +69,7 @@ export function VehicleMap({
     map, mapLoaded, showRoute, routeCoordinates, markerPos,
   );
 
-  const { isOffCenter, recenter } = useMapRecenter(map, mapLoaded, validCenter);
+  const { isOffCenter, recenter } = useMapFollow(map, mapLoaded, markerPos);
 
   const showFitButton = showRoute && routeCoordinates && routeCoordinates.length >= 2;
 
