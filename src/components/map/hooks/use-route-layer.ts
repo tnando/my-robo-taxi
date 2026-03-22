@@ -87,9 +87,9 @@ export function useRouteLayer(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, mapLoaded, showRoute, routeCoordinates]);
 
-  // ── Set full route data once when routeCoordinates changes ──────────────
-  // The route is displayed as a single polyline (no two-tone split per tick)
-  // to avoid flicker from calling setData on every position update.
+  // ── Update route split on a throttled interval ─────────────────────────
+  // Two-tone split (dim completed, bright remaining) updates every 3s to
+  // avoid flicker from calling setData on every 1s telemetry tick.
   useEffect(() => {
     const m = map.current;
     if (!m || !mapLoaded || !showRoute || !routeCoordinates || routeCoordinates.length < 2) {
@@ -98,19 +98,28 @@ export function useRouteLayer(
 
     if (!sourcesAddedRef.current) return;
 
-    // Show the full route on the remaining layer (bright), clear completed
-    const completedSource = m.getSource('route-completed') as mapboxgl.GeoJSONSource | undefined;
-    const remainingSource = m.getSource('route-remaining') as mapboxgl.GeoJSONSource | undefined;
+    function updateSplit() {
+      if (!m || !routeCoordinates) return;
+      const { completed, remaining } = splitRoute(routeCoordinates, vehiclePosition);
+      setRemainingRoute(remaining.length >= 2 ? remaining : undefined);
 
-    if (completedSource) {
-      completedSource.setData(EMPTY_LINE);
-    }
-    if (remainingSource) {
-      remainingSource.setData(lineFeature(routeCoordinates));
+      const completedSrc = m.getSource('route-completed') as mapboxgl.GeoJSONSource | undefined;
+      const remainingSrc = m.getSource('route-remaining') as mapboxgl.GeoJSONSource | undefined;
+
+      if (completedSrc) {
+        completedSrc.setData(completed.length >= 2 ? lineFeature(completed) : EMPTY_LINE);
+      }
+      if (remainingSrc) {
+        remainingSrc.setData(remaining.length >= 2 ? lineFeature(remaining) : EMPTY_LINE);
+      }
     }
 
-    // Set remaining route for route-overview mode fitBounds
-    setRemainingRoute(routeCoordinates);
+    // Initial update
+    updateSplit();
+
+    // Throttled updates every 3 seconds
+    const interval = setInterval(updateSplit, 3000);
+    return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, mapLoaded, showRoute, routeCoordinates]);
 
