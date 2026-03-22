@@ -63,14 +63,20 @@ export function useRouteLayer(
       return;
     }
 
-    // Add sources + layers if not already present
+    // Add sources + layers if not already present — wait for style to load
     if (!sourcesAddedRef.current) {
-      addRouteSources(m);
-      addRouteLayers(m);
-      sourcesAddedRef.current = true;
+      const setup = () => {
+        addRouteSources(m);
+        addRouteLayers(m);
+        sourcesAddedRef.current = true;
+        addEndpointMarkers(m, routeCoordinates, startMarkerRef, endMarkerRef);
+      };
 
-      // Add start/end markers
-      addEndpointMarkers(m, routeCoordinates, startMarkerRef, endMarkerRef);
+      if (m.isStyleLoaded()) {
+        setup();
+      } else {
+        m.once('style.load', setup);
+      }
     }
 
     // Cleanup on unmount or route change (different route)

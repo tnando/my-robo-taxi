@@ -12,8 +12,10 @@ export type MapMode = 'north-up' | 'heading-up' | 'route-overview';
 
 // ── Timing constants ────────────────────────────────────────────────────────
 
-/** Duration (ms) for smooth tracking via easeTo (small moves <500m). */
-const EASE_TO_DURATION = 800;
+/** Duration (ms) for smooth tracking via easeTo. Matches the telemetry
+ *  update interval (1s) so the animation completes just as the next
+ *  position arrives, creating continuous fluid movement like Tesla's map. */
+const EASE_TO_DURATION = 1000;
 
 /** Duration (ms) for large jumps via flyTo (>500m). */
 const FLY_TO_DURATION = 1200;
@@ -272,7 +274,7 @@ export function useMapFollow(
         pitch: mapMode === 'heading-up' ? 50 : 0,
         zoom,
         duration: EASE_TO_DURATION,
-        easing: (t: number) => t * (2 - t), // ease-out quadratic
+        easing: (t: number) => t, // linear — constant speed for fluid continuous movement
         ...(mapMode === 'heading-up' ? { offset: [0, m.getContainer().clientHeight * 0.15] as [number, number] } : {}),
       });
       setTimeout(() => {
