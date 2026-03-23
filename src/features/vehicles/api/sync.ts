@@ -10,6 +10,7 @@ import {
 } from '@/lib/tesla-client';
 import type { TeslaVehicleData } from '@/lib/tesla-client';
 import { mapTeslaVehicleToUpsertData } from '@/lib/tesla-mapper';
+import { pushFleetConfig } from './fleet-config';
 
 export const STALENESS_THRESHOLD_MS = 30_000;
 const WAKE_POLL_INTERVAL_MS = 3_000;
@@ -97,18 +98,18 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
       const upsertData = mapTeslaVehicleToUpsertData(listItem, vehicleData);
       const teslaVehicleId = upsertData.teslaVehicleId;
 
-      // When fleet_status fails (null), look up the existing DB value
+      // Fetch existing pairing status to detect unpaired → paired transitions
+      // and to preserve the existing value when fleet_status returns null.
+      const existingVehicle = await prisma.vehicle.findUnique({
+        where: { teslaVehicleId },
+        select: { virtualKeyPaired: true, vin: true },
+      });
+      const wasPreviouslyPaired = existingVehicle?.virtualKeyPaired ?? false;
+
+      // When fleet_status fails (null), use the existing DB value
       // so we don't flip a paired vehicle back to unpaired on a transient error.
-      let keyPaired: boolean;
-      if (keyPairedResult !== null) {
-        keyPaired = keyPairedResult;
-      } else {
-        const existing = await prisma.vehicle.findUnique({
-          where: { teslaVehicleId },
-          select: { virtualKeyPaired: true },
-        });
-        keyPaired = existing?.virtualKeyPaired ?? false;
-      }
+      const keyPaired: boolean =
+        keyPairedResult !== null ? keyPairedResult : wasPreviouslyPaired;
       if (keyPaired) pairedCount++;
 
       // Skip lat/lng update when Tesla returns 0,0 (vehicle asleep/offline)
@@ -159,6 +160,19 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
         },
         update: updateData,
       });
+
+      // Auto-push fleet telemetry config on first pairing.
+      // Isolated in try/catch so config push failure does not block sync.
+      if (keyPaired && !wasPreviouslyPaired) {
+        try {
+          await pushFleetConfig(userId, listItem.vin);
+        } catch (err) {
+          console.error(
+            `[sync] Fleet config push failed for VIN ***${listItem.vin.slice(-4)}:`,
+            err,
+          );
+        }
+      }
 
       // Detect drive state transitions (start/update/end drives).
       // Isolated in try/catch so drive detection errors don't block sync.
