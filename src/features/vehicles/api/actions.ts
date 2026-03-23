@@ -26,6 +26,8 @@ export async function generateWsToken(): Promise<string | null> {
 
   const token = await new SignJWT({ sub: session.user.id })
     .setProtectedHeader({ alg: 'HS256' })
+    .setIssuer('myrobotaxi')
+    .setAudience('telemetry')
     .setIssuedAt()
     .setExpirationTime('1h')
     .sign(WS_TOKEN_SECRET);

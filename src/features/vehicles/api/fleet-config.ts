@@ -22,6 +22,8 @@ export async function pushFleetConfig(userId: string, vin: string): Promise<void
   const secret = new TextEncoder().encode(authSecret);
   const token = await new SignJWT({ sub: userId })
     .setProtectedHeader({ alg: 'HS256' })
+    .setIssuer('myrobotaxi')
+    .setAudience('telemetry')
     .setIssuedAt()
     .setExpirationTime('5m')
     .sign(secret);
