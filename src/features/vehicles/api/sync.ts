@@ -102,7 +102,7 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
       // and to preserve the existing value when fleet_status returns null.
       const existingVehicle = await prisma.vehicle.findUnique({
         where: { teslaVehicleId },
-        select: { virtualKeyPaired: true, vin: true },
+        select: { virtualKeyPaired: true },
       });
       const wasPreviouslyPaired = existingVehicle?.virtualKeyPaired ?? false;
 

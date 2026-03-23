@@ -1,27 +1,32 @@
 import { SignJWT } from 'jose';
 
-const TELEMETRY_API_URL = process.env.TELEMETRY_API_URL;
-const AUTH_SECRET = new TextEncoder().encode(process.env.AUTH_SECRET ?? '');
-
 /**
  * Push fleet telemetry config for a vehicle via the telemetry server.
  * Called after virtual key pairing is detected during sync.
  * Idempotent — safe to call multiple times (server returns 409 if already configured).
  */
 export async function pushFleetConfig(userId: string, vin: string): Promise<void> {
-  if (!TELEMETRY_API_URL) {
+  const telemetryApiUrl = process.env.TELEMETRY_API_URL;
+  if (!telemetryApiUrl) {
     console.warn('[fleet-config] TELEMETRY_API_URL not set — skipping fleet config push');
     return;
   }
 
+  const authSecret = process.env.AUTH_SECRET;
+  if (!authSecret) {
+    console.error('[fleet-config] AUTH_SECRET not set — cannot sign JWT');
+    return;
+  }
+
   // Sign a JWT with the same AUTH_SECRET the telemetry server validates
+  const secret = new TextEncoder().encode(authSecret);
   const token = await new SignJWT({ sub: userId })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('5m')
-    .sign(AUTH_SECRET);
+    .sign(secret);
 
-  const url = `${TELEMETRY_API_URL}/api/fleet-config/${encodeURIComponent(vin)}`;
+  const url = `${telemetryApiUrl}/api/fleet-config/${encodeURIComponent(vin)}`;
 
   const res = await fetch(url, {
     method: 'POST',
