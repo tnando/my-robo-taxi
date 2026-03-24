@@ -33,6 +33,9 @@ interface WsMessage {
 /** Heartbeat timeout — if no message within this window, consider connection stale. */
 const HEARTBEAT_TIMEOUT_MS = 15_000;
 
+/** Maximum reconnect attempts before giving up entirely. */
+const MAX_RECONNECT_ATTEMPTS = 10;
+
 /**
  * WebSocket client class for vehicle telemetry.
  * Handles connection, authentication, reconnection, and heartbeat monitoring.
@@ -95,7 +98,9 @@ export class VehicleWebSocket {
   // --- Internal handlers ---
 
   private handleOpen(): void {
-    this.reconnectAttempts = 0;
+    // Don't reset reconnectAttempts here — the connection opened but auth
+    // hasn't succeeded yet.  Reset only after receiving real data (vehicle_update
+    // or heartbeat), which proves the token was accepted by the server.
     this.setStatus('connected');
 
     // Authenticate immediately
@@ -115,15 +120,25 @@ export class VehicleWebSocket {
 
     switch (msg.type) {
       case 'vehicle_update':
+        // Auth succeeded — safe to reset backoff counter
+        this.reconnectAttempts = 0;
         if (msg.payload && this.onUpdate) {
           this.onUpdate(msg.payload as VehicleUpdate);
         }
         break;
       case 'heartbeat':
-        // Heartbeat received — timer already reset above
+        // Auth succeeded — safe to reset backoff counter
+        this.reconnectAttempts = 0;
         break;
       case 'error':
         console.error('[VehicleWebSocket] Server error:', msg.payload);
+        // Auth errors are permanent — stop reconnecting to avoid hammering the server
+        if (isAuthError(msg.payload)) {
+          console.warn('[VehicleWebSocket] Auth failed — stopping reconnection. Token may be expired.');
+          this.intentionalClose = true;
+          this.ws?.close();
+          this.setStatus('disconnected');
+        }
         break;
     }
   }
@@ -145,6 +160,12 @@ export class VehicleWebSocket {
   // --- Reconnection with exponential backoff + jitter ---
 
   private scheduleReconnect(): void {
+    if (this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      console.warn(`[VehicleWebSocket] Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached — giving up.`);
+      this.setStatus('disconnected');
+      return;
+    }
+
     this.setStatus('reconnecting');
 
     const baseDelay = WS_RECONNECT_BASE_DELAY * Math.pow(WS_RECONNECT_MULTIPLIER, this.reconnectAttempts);
@@ -196,4 +217,23 @@ export class VehicleWebSocket {
       this.ws.send(JSON.stringify(data));
     }
   }
+}
+
+/** Check if a server error payload indicates an authentication failure. */
+function isAuthError(payload: unknown): boolean {
+  if (typeof payload === 'string') {
+    const lower = payload.toLowerCase();
+    return lower.includes('auth') || lower.includes('token') || lower.includes('expired')
+      || lower.includes('unauthorized');
+  }
+  if (payload && typeof payload === 'object') {
+    const obj = payload as Record<string, unknown>;
+    if (typeof obj.code === 'string') {
+      return obj.code === 'auth_failed' || obj.code === 'unauthorized' || obj.code === 'token_expired';
+    }
+    if (typeof obj.message === 'string') {
+      return isAuthError(obj.message);
+    }
+  }
+  return false;
 }
