@@ -5,6 +5,8 @@ import type { Vehicle, TripStop, VehicleStatus, GearPosition } from '@/types/veh
 
 export type PrismaVehicleWithStops = Prisma.VehicleGetPayload<{ include: { stops: true } }>;
 
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
 /**
  * Format a DateTime as a relative time string (e.g., "Just now", "3m ago", "2h ago").
  * Exported for use in client-side hooks.
@@ -36,7 +38,7 @@ export function formatRelativeTime(isoString: string): string {
     return `${diffDays}d ago`;
   }
 
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return `${MONTHS[date.getMonth()]} ${date.getDate()}`;
 }
 
 const VEHICLE_STATUS_MAP: Record<string, VehicleStatus> = {

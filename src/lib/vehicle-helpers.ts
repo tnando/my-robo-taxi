@@ -67,6 +67,21 @@ export function isDriving(status: VehicleStatus): boolean {
 }
 
 /**
+ * Safely extract routeCoordinates from WebSocket-merged vehicle state.
+ * The telemetry server injects this field via vehicle_update but it's
+ * not on the Vehicle type — check existence at runtime.
+ */
+export function getLiveRoute(vehicle: Vehicle): [number, number][] | undefined {
+  if ('routeCoordinates' in vehicle) {
+    const coords = (vehicle as unknown as { routeCoordinates: unknown }).routeCoordinates;
+    if (Array.isArray(coords) && coords.length > 0) {
+      return coords as [number, number][];
+    }
+  }
+  return undefined;
+}
+
+/**
  * Resolves the displayed gear from the raw shift_state value.
  * Tesla returns null for shift_state when parked (engine off), so we
  * infer P from the vehicle status in that case.

@@ -8,6 +8,7 @@ import type { Drive } from '@/types/drive';
 import { SetupBanner } from '@/components/ui/SetupBanner';
 import { TESLA_KEY_PAIRING_URL } from '@/lib/constants';
 import { selectCurrentDrive } from '@/lib/drive-utils';
+import { getLiveRoute } from '@/lib/vehicle-helpers';
 
 import { BottomSheet, shouldShowHalfContent } from '@/components/layout/BottomSheet';
 import { CompassLabels } from '@/components/map/CompassLabels';
@@ -17,6 +18,7 @@ import { useBackgroundSync } from '../hooks/use-background-sync';
 import { usePullToRefresh } from '../hooks/use-pull-to-refresh';
 import { useVehicleStream } from '../hooks/use-vehicle-stream';
 import { VehicleCardCarousel } from './VehicleCardCarousel';
+import { PullToRefreshIndicator } from './PullToRefreshIndicator';
 import { DrivingPeekContent } from './DrivingPeekContent';
 import { ParkedPeekContent } from './ParkedPeekContent';
 import { DrivingHalfContent } from './DrivingHalfContent';
@@ -123,24 +125,7 @@ export function HomeScreen({ vehicles, drives, onSync, onForceSync, wsToken }: H
       </div>
 
       {/* Pull-to-refresh indicator */}
-      {pullDistance > 0 && (
-        <div
-          className="absolute left-1/2 -translate-x-1/2 z-20 transition-transform"
-          style={{ top: Math.min(pullDistance - 30, 56) }}
-        >
-          <div className="w-8 h-8 rounded-full bg-bg-surface/80 backdrop-blur-sm border border-border-default flex items-center justify-center shadow-lg">
-            <svg
-              className="w-4 h-4 text-gold transition-transform"
-              style={{ transform: `rotate(${pullDistance * 4}deg)`, opacity: Math.min(pullDistance / 80, 1) }}
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-              aria-hidden="true"
-            >
-              <path d="M1 4v6h6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-        </div>
-      )}
+      <PullToRefreshIndicator pullDistance={pullDistance} />
 
       {/* Sync indicator */}
       {isSyncing && pullDistance === 0 && (
@@ -206,18 +191,5 @@ export function HomeScreen({ vehicles, drives, onSync, onForceSync, wsToken }: H
       </BottomSheet>
     </div>
   );
-}
-
-/** Safely extract routeCoordinates from WebSocket-merged vehicle state.
- *  The telemetry server injects this field via vehicle_update but it's
- *  not on the Vehicle type — check existence at runtime. */
-function getLiveRoute(vehicle: Vehicle): [number, number][] | undefined {
-  if ('routeCoordinates' in vehicle) {
-    const coords = (vehicle as unknown as { routeCoordinates: unknown }).routeCoordinates;
-    if (Array.isArray(coords) && coords.length > 0) {
-      return coords as [number, number][];
-    }
-  }
-  return undefined;
 }
 
