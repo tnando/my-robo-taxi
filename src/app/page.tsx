@@ -1,5 +1,5 @@
 import { signIn } from '@/auth';
-import { HomeScreen, HomeEmptyScreen, HomeSyncingScreen, getCachedVehicles, getVehicles, syncVehicles, generateWsToken } from '@/features/vehicles';
+import { HomeScreen, HomeEmptyScreen, HomeSyncingScreen, getCachedVehicles, getVehicles, syncVehicles, forceSyncVehicles, generateWsToken } from '@/features/vehicles';
 import { getSettings, deferKeyPairing, shouldShowPairingModal, PairingModalTrigger } from '@/features/settings';
 import { getDrives } from '@/features/drives';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -44,7 +44,7 @@ export default async function RootPage() {
 
   return (
     <div className="min-h-screen bg-bg-primary">
-      <HomeScreen vehicles={vehicles} drives={drives} onSync={syncVehicles} wsToken={wsToken ?? undefined} />
+      <HomeScreen vehicles={vehicles} drives={drives} onSync={syncVehicles} onForceSync={forceSyncVehicles} wsToken={wsToken ?? undefined} />
       {showPairingModal && (
         <PairingModalTrigger autoShow onDefer={handleDeferPairing} />
       )}

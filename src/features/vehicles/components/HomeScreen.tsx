@@ -34,8 +34,10 @@ export interface HomeScreenProps {
   vehicles: Vehicle[];
   /** All drives (used to find the latest drive for the current vehicle). */
   drives: Drive[];
-  /** Server action to trigger a background sync from Tesla. */
+  /** Server action to trigger a background sync from Tesla (respects staleness). */
   onSync?: () => Promise<void>;
+  /** Server action to force-sync from Tesla (bypasses staleness, for manual refresh). */
+  onForceSync?: () => Promise<void>;
   /** Signed JWT for WebSocket authentication. */
   wsToken?: string;
 }
@@ -44,21 +46,22 @@ export interface HomeScreenProps {
  * Main home screen orchestrator — full-screen map with bottom sheet.
  * Coordinates VehicleMap, VehicleCardCarousel, BottomSheet, and peek/half content.
  */
-export function HomeScreen({ vehicles, drives, onSync, wsToken }: HomeScreenProps) {
+export function HomeScreen({ vehicles, drives, onSync, onForceSync, wsToken }: HomeScreenProps) {
   const [currentVehicleIndex, setCurrentVehicleIndex] = useState(0);
   const [dismissedVehicleIds, setDismissedVehicleIds] = useState<Set<string>>(new Set());
   const sheet = useBottomSheet('peek');
   const syncAction = useMemo(() => onSync ?? (() => Promise.resolve()), [onSync]);
+  const forceSyncAction = useMemo(() => onForceSync ?? syncAction, [onForceSync, syncAction]);
   const isAutoSyncing = useBackgroundSync(syncAction);
-  const { pullDistance, isRefreshing } = usePullToRefresh(syncAction, sheet.sheetState);
+  const { pullDistance, isRefreshing } = usePullToRefresh(forceSyncAction, sheet.sheetState);
   const [isManualRefreshing, startManualRefresh] = useTransition();
   const isSyncing = isAutoSyncing || isRefreshing || isManualRefreshing;
 
   const handleManualRefresh = useCallback(() => {
     startManualRefresh(async () => {
-      await syncAction();
+      await forceSyncAction();
     });
-  }, [syncAction]);
+  }, [forceSyncAction]);
 
   // Real-time telemetry via WebSocket — merges live updates into vehicle state.
   const { vehicles: liveVehicles } = useVehicleStream(vehicles, wsToken);

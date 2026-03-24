@@ -122,6 +122,23 @@ export async function syncVehicles(): Promise<void> {
 }
 
 /**
+ * Force-sync vehicles from Tesla regardless of staleness, then revalidate.
+ * Used by the manual refresh button — always fetches fresh data from Tesla.
+ */
+export async function forceSyncVehicles(): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.id) return;
+
+  try {
+    await syncVehiclesFromTesla(session.user.id);
+  } catch (err) {
+    console.error('[forceSyncVehicles] Sync failed:', err);
+  }
+
+  revalidatePath('/');
+}
+
+/**
  * Fetch a single vehicle by ID, verifying it belongs to the current user.
  * Returns null if the vehicle is not found or does not belong to the user.
  */
