@@ -69,6 +69,7 @@ model Vehicle {
   odometerMiles    Int           @default(0)
   fsdMilesToday    Float         @default(0)
   virtualKeyPaired Boolean       @default(false)
+  setupStatus      SetupStatus   @default(pending_pairing)
   destinationName  String?
   destinationAddress String?
   etaMinutes       Int?
@@ -91,6 +92,14 @@ enum VehicleStatus {
   charging
   offline
   in_service
+}
+
+enum SetupStatus {
+  pending_pairing
+  pairing_detected
+  config_pushed
+  waiting_connection
+  connected
 }
 
 model TripStop {

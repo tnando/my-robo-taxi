@@ -26,6 +26,7 @@ const makeVehicle = (id: string, name: string): Vehicle => ({
   odometerMiles: 15000,
   fsdMilesToday: 0,
   virtualKeyPaired: true,
+  setupStatus: 'connected',
 });
 
 const vehicles = [makeVehicle('v1', 'Model Y'), makeVehicle('v2', 'Model 3')];

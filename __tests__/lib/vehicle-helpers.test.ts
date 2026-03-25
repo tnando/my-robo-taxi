@@ -34,6 +34,7 @@ function makeVehicle(overrides: Partial<Vehicle> = {}): Vehicle {
     odometerMiles: 12000,
     fsdMilesToday: 10,
     virtualKeyPaired: true,
+    setupStatus: 'connected',
     ...overrides,
   };
 }

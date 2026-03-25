@@ -26,6 +26,7 @@ const vehicle: Vehicle = {
   odometerMiles: 15000,
   fsdMilesToday: 0,
   virtualKeyPaired: true,
+  setupStatus: 'connected',
 };
 
 describe('VehicleDetailsBlock', () => {
