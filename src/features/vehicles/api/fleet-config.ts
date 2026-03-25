@@ -1,3 +1,5 @@
+'use server';
+
 import { SignJWT } from 'jose';
 
 import { JWT_ISSUER, JWT_AUDIENCE } from '@/lib/constants';
