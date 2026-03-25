@@ -22,6 +22,15 @@ export interface TripStop {
   type: 'charging' | 'waypoint';
 }
 
+/** HVAC power states from Tesla HvacPower field. */
+export type HvacPower = 'on' | 'off' | 'precondition' | 'overtempProtection';
+
+/** Defrost mode states from Tesla DefrostMode field. */
+export type DefrostMode = 'off' | 'normal' | 'max';
+
+/** Climate keeper modes from Tesla ClimateKeeperMode field. */
+export type ClimateKeeperMode = 'off' | 'keepOn' | 'dogMode' | 'campMode';
+
 /** Core vehicle entity with telemetry and optional active-trip data. */
 export interface Vehicle {
   id: string;
@@ -56,6 +65,16 @@ export interface Vehicle {
   tripDistanceMiles?: number;
   tripDistanceRemaining?: number;
   stops?: TripStop[];
+  /** Climate fields — populated via WebSocket real-time updates. */
+  isClimateOn?: boolean;
+  hvacPower?: HvacPower;
+  fanSpeed?: number;
+  driverTempSetting?: number;
+  passengerTempSetting?: number;
+  defrostMode?: DefrostMode;
+  seatHeaterLeft?: number;
+  seatHeaterRight?: number;
+  climateKeeperMode?: ClimateKeeperMode;
 }
 
 /** Status display config for UI rendering. */
