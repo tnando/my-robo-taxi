@@ -114,14 +114,19 @@ export function useSetupStepper({
 
     try {
       await pushFleetConfig(userId, vin);
-      await updateSetupStatus(vehicleId, 'config_pushed');
     } catch {
       // Fleet config push errors are non-fatal — move to Step 3 anyway.
       // The telemetry server handles repeated pushes idempotently.
     }
 
-    if (stoppedRef.current) return;
-    await updateSetupStatus(vehicleId, 'waiting_connection');
+    // Always advance to Step 3 — no stoppedRef guard here because this is
+    // a one-shot operation (not a poll loop). The guard was causing the
+    // stepper to hang when React re-rendered during the async config push.
+    try {
+      await updateSetupStatus(vehicleId, 'waiting_connection');
+    } catch {
+      // Non-fatal — Step 3 polling works regardless of DB status.
+    }
     setIsLoading(false);
     setStep(3);
   }, [userId, vin, vehicleId]);
