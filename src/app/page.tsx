@@ -1,4 +1,4 @@
-import { signIn } from '@/auth';
+import { signIn, auth } from '@/auth';
 import { HomeScreen, HomeEmptyScreen, HomeSyncingScreen, getCachedVehicles, getVehicles, syncVehicles, generateWsToken } from '@/features/vehicles';
 import { getSettings, deferKeyPairing, shouldShowPairingModal, PairingModalTrigger } from '@/features/settings';
 import { getDrives } from '@/features/drives';
@@ -21,10 +21,11 @@ async function handleDeferPairing() {
  * Auth gate will redirect unauthenticated users to /signin once NextAuth is integrated.
  */
 export default async function RootPage() {
-  const [cachedVehicles, settings, drives] = await Promise.all([
+  const [cachedVehicles, settings, drives, session] = await Promise.all([
     getCachedVehicles(),
     getSettings(),
     getDrives(),
+    auth(),
   ]);
 
   // If no cached vehicles, try a full sync — the user may have just linked Tesla
@@ -41,10 +42,11 @@ export default async function RootPage() {
 
   const showPairingModal = settings ? shouldShowPairingModal(settings) : false;
   const wsToken = await generateWsToken();
+  const userId = session?.user?.id ?? undefined;
 
   return (
     <div className="min-h-screen bg-bg-primary">
-      <HomeScreen vehicles={vehicles} drives={drives} onSync={syncVehicles} wsToken={wsToken ?? undefined} />
+      <HomeScreen vehicles={vehicles} drives={drives} onSync={syncVehicles} wsToken={wsToken ?? undefined} userId={userId} />
       {showPairingModal && (
         <PairingModalTrigger autoShow onDefer={handleDeferPairing} />
       )}
