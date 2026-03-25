@@ -5,8 +5,6 @@ import dynamic from 'next/dynamic';
 
 import type { Vehicle } from '@/types/vehicle';
 import type { Drive } from '@/types/drive';
-import { SetupBanner } from '@/components/ui/SetupBanner';
-import { TESLA_KEY_PAIRING_URL } from '@/lib/constants';
 import { selectCurrentDrive } from '@/lib/drive-utils';
 
 import { BottomSheet, shouldShowHalfContent } from '@/components/layout/BottomSheet';
@@ -21,6 +19,7 @@ import { DrivingPeekContent } from './DrivingPeekContent';
 import { ParkedPeekContent } from './ParkedPeekContent';
 import { DrivingHalfContent } from './DrivingHalfContent';
 import { ParkedHalfContent } from './ParkedHalfContent';
+import { VehicleSetupStepper } from './VehicleSetupStepper';
 
 // Dynamic import — Mapbox depends on window/document
 const VehicleMap = dynamic(
@@ -38,15 +37,16 @@ export interface HomeScreenProps {
   onSync?: () => Promise<void>;
   /** Signed JWT for WebSocket authentication. */
   wsToken?: string;
+  /** Authenticated user ID — passed to the setup stepper for server actions. */
+  userId?: string;
 }
 
 /**
  * Main home screen orchestrator — full-screen map with bottom sheet.
  * Coordinates VehicleMap, VehicleDotSelector, BottomSheet, and peek/half content.
  */
-export function HomeScreen({ vehicles, drives, onSync, wsToken }: HomeScreenProps) {
+export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeScreenProps) {
   const [currentVehicleIndex, setCurrentVehicleIndex] = useState(0);
-  const [dismissedVehicleIds, setDismissedVehicleIds] = useState<Set<string>>(new Set());
   const sheet = useBottomSheet('peek');
   const syncAction = useMemo(() => onSync ?? (() => Promise.resolve()), [onSync]);
   const isAutoSyncing = useBackgroundSync(syncAction);
@@ -152,16 +152,10 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken }: HomeScreenProp
         onTouchEnd={sheet.onTouchEnd}
         onToggle={sheet.toggle}
       >
-        {/* Setup banner — shown when virtual key is not paired */}
-        {!vehicle.virtualKeyPaired && !dismissedVehicleIds.has(vehicle.id) && (
+        {/* Setup stepper — shown while vehicle is not yet fully connected */}
+        {vehicle.setupStatus !== 'connected' && vehicle.vin && userId && (
           <div className="px-6 mb-4">
-            <SetupBanner
-              title="Complete Setup"
-              description="Pair your virtual key to unlock live location, temperatures, and vehicle name"
-              actionLabel="Pair Now"
-              onAction={() => window.open(TESLA_KEY_PAIRING_URL, '_blank')}
-              onDismiss={() => setDismissedVehicleIds((prev) => new Set(prev).add(vehicle.id))}
-            />
+            <VehicleSetupStepper vehicle={vehicle} userId={userId} />
           </div>
         )}
 

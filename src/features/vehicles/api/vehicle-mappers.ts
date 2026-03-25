@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 
 import { VALID_GEARS } from '@/types/vehicle';
-import type { Vehicle, TripStop, VehicleStatus, GearPosition } from '@/types/vehicle';
+import type { Vehicle, TripStop, VehicleStatus, GearPosition, SetupStatus } from '@/types/vehicle';
 
 export type PrismaVehicleWithStops = Prisma.VehicleGetPayload<{ include: { stops: true } }>;
 
@@ -39,6 +39,20 @@ const VEHICLE_STATUS_MAP: Record<string, VehicleStatus> = {
   in_service: 'in_service',
 };
 
+const SETUP_STATUS_MAP: Record<string, SetupStatus> = {
+  pending_pairing: 'pending_pairing',
+  pairing_detected: 'pairing_detected',
+  config_pushed: 'config_pushed',
+  waiting_connection: 'waiting_connection',
+  connected: 'connected',
+};
+
+function toSetupStatus(raw: string): SetupStatus {
+  const status = SETUP_STATUS_MAP[raw];
+  if (!status) return 'pending_pairing';
+  return status;
+}
+
 function toGearPosition(raw: string | null): GearPosition | null {
   if (raw !== null && VALID_GEARS.has(raw)) return raw as GearPosition;
   return null;
@@ -64,6 +78,7 @@ export function mapPrismaVehicleToVehicle(prismaVehicle: PrismaVehicleWithStops)
 
   const vehicle: Vehicle = {
     id: prismaVehicle.id,
+    vin: prismaVehicle.vin ?? undefined,
     name: prismaVehicle.name,
     model: prismaVehicle.model,
     year: prismaVehicle.year,
@@ -85,6 +100,7 @@ export function mapPrismaVehicleToVehicle(prismaVehicle: PrismaVehicleWithStops)
     odometerMiles: prismaVehicle.odometerMiles,
     fsdMilesToday: prismaVehicle.fsdMilesToday,
     virtualKeyPaired: prismaVehicle.virtualKeyPaired,
+    setupStatus: toSetupStatus(prismaVehicle.setupStatus),
   };
 
   // Only include optional trip fields when present

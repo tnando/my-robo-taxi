@@ -34,4 +34,12 @@ test.describe('home screen', () => {
     const bottomSheet = page.getByRole('region', { name: /vehicle details/i });
     await expect(bottomSheet).toBeVisible();
   });
+
+  test('setup stepper is not shown for fully connected vehicles', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByText('Midnight Runner')).toBeVisible({ timeout: 15_000 });
+
+    // Seeded vehicles have setupStatus: 'connected' — stepper should not appear
+    await expect(page.getByText('Complete Vehicle Setup')).not.toBeVisible();
+  });
 });

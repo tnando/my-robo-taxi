@@ -12,6 +12,7 @@ export { SharedViewerScreen } from './components/SharedViewerScreen';
 
 // Server actions
 export { getVehicles, getCachedVehicles, syncVehicles, getVehicleById, generateWsToken } from './api/actions';
+export { checkPairingStatus, checkVehicleConnection, updateSetupStatus } from './api/setup-actions';
 
 // Types (used by app/ pages for data passing)
 export type { VehicleWithTrip, SheetState } from './types';

@@ -1,6 +1,14 @@
 /** Vehicle statuses that map to status colors in the design system. */
 export type VehicleStatus = 'driving' | 'parked' | 'charging' | 'offline' | 'in_service';
 
+/** Setup status tracking vehicle onboarding progress. */
+export type SetupStatus =
+  | 'pending_pairing'
+  | 'pairing_detected'
+  | 'config_pushed'
+  | 'waiting_connection'
+  | 'connected';
+
 /** Valid gear positions from Tesla drive_state.shift_state. */
 export type GearPosition = 'P' | 'R' | 'N' | 'D';
 
@@ -38,6 +46,9 @@ export interface Vehicle {
   odometerMiles: number;
   fsdMilesToday: number;
   virtualKeyPaired: boolean;
+  setupStatus: SetupStatus;
+  /** VIN — available after Tesla sync. Needed for pairing checks and telemetry. */
+  vin?: string;
   /** Active trip fields — present only when status === 'driving'. */
   destinationName?: string;
   destinationAddress?: string;

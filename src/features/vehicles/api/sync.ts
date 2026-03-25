@@ -11,6 +11,7 @@ import {
 import type { TeslaVehicleData } from '@/lib/tesla-client';
 import { mapTeslaVehicleToUpsertData } from '@/lib/tesla-mapper';
 import { pushFleetConfig } from './fleet-config';
+import type { SetupStatus } from '@/types/vehicle';
 
 export const STALENESS_THRESHOLD_MS = 30_000;
 const WAKE_POLL_INTERVAL_MS = 3_000;
@@ -42,6 +43,17 @@ async function pollForVehicleData(
 /** Check whether Tesla response includes drive_state (virtual key paired). */
 function hasFullData(vehicleData: TeslaVehicleData): boolean {
   return vehicleData.drive_state !== undefined;
+}
+
+const SETUP_STATUS_ORDER: SetupStatus[] = [
+  'pending_pairing', 'pairing_detected', 'config_pushed', 'waiting_connection', 'connected',
+];
+
+/** Returns the later of two SetupStatus values — never moves backwards. */
+function advanceSetupStatus(current: SetupStatus, next: SetupStatus): SetupStatus {
+  const currentIdx = SETUP_STATUS_ORDER.indexOf(current);
+  const nextIdx = SETUP_STATUS_ORDER.indexOf(next);
+  return nextIdx > currentIdx ? next : current;
 }
 
 /**
@@ -98,13 +110,14 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
       const upsertData = mapTeslaVehicleToUpsertData(listItem, vehicleData);
       const teslaVehicleId = upsertData.teslaVehicleId;
 
-      // Fetch existing pairing status to detect unpaired → paired transitions
+      // Fetch existing pairing + setup status to detect unpaired → paired transitions
       // and to preserve the existing value when fleet_status returns null.
       const existingVehicle = await prisma.vehicle.findUnique({
         where: { teslaVehicleId },
-        select: { virtualKeyPaired: true },
+        select: { virtualKeyPaired: true, setupStatus: true },
       });
       const wasPreviouslyPaired = existingVehicle?.virtualKeyPaired ?? false;
+      const existingSetupStatus = existingVehicle?.setupStatus ?? 'pending_pairing';
 
       // When fleet_status fails (null), use the existing DB value
       // so we don't flip a paired vehicle back to unpaired on a transient error.
@@ -119,12 +132,23 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
       // When virtual key is not paired, only charge_state comes back.
       // Only update fields that have real data to avoid overwriting
       // previous values with mapper defaults.
+      // Advance setupStatus based on pairing state.
+      // Rules: never go backwards (e.g., don't reset 'connected' to 'config_pushed').
+      let newSetupStatus: SetupStatus = existingSetupStatus as SetupStatus;
+      if (keyPaired && !wasPreviouslyPaired) {
+        newSetupStatus = advanceSetupStatus(newSetupStatus, 'pairing_detected');
+      } else if (keyPaired && wasPreviouslyPaired) {
+        // Advance to at least config_pushed for vehicles already paired before this feature
+        newSetupStatus = advanceSetupStatus(newSetupStatus, 'config_pushed');
+      }
+
       const updateData: Record<string, unknown> = {
         name: upsertData.name,
         status: upsertData.status,
         chargeLevel: upsertData.chargeLevel,
         estimatedRange: upsertData.estimatedRange,
         virtualKeyPaired: keyPaired,
+        setupStatus: newSetupStatus,
         lastUpdated: new Date(),
       };
 
@@ -166,6 +190,11 @@ export async function syncVehiclesFromTesla(userId: string): Promise<number> {
       if (keyPaired && !wasPreviouslyPaired) {
         try {
           await pushFleetConfig(userId, listItem.vin);
+          // Advance to waiting_connection after fleet config push
+          await prisma.vehicle.update({
+            where: { id: vehicle.id },
+            data: { setupStatus: 'waiting_connection' },
+          });
         } catch (err) {
           console.error(
             `[sync] Fleet config push failed for VIN ***${listItem.vin.slice(-4)}:`,

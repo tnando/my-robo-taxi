@@ -59,6 +59,7 @@ vi.mock('@/lib/drive-detection', () => ({
 }));
 
 const mockVehicleUpsert = vi.fn().mockResolvedValue({ id: 'vehicle-1' });
+const mockVehicleUpdate = vi.fn().mockResolvedValue({ id: 'vehicle-1' });
 const mockVehicleFindUnique = vi.fn();
 const mockVehicleFindFirst = vi.fn();
 const mockVehicleFindMany = vi.fn();
@@ -72,6 +73,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     vehicle: {
       upsert: (...args: unknown[]) => mockVehicleUpsert(...args),
+      update: (...args: unknown[]) => mockVehicleUpdate(...args),
       findUnique: (...args: unknown[]) => mockVehicleFindUnique(...args),
       findFirst: (...args: unknown[]) => mockVehicleFindFirst(...args),
       findMany: (...args: unknown[]) => mockVehicleFindMany(...args),
