@@ -72,7 +72,7 @@ describe('useSetupStepper', () => {
   });
 
   describe('step 1 — pairing detection', () => {
-    it('advances to step 2 when pairing is detected', async () => {
+    it('advances past step 2 when pairing is detected', async () => {
       mockCheckPairingStatus.mockResolvedValue({ paired: true, error: false, tokenExpired: false });
       mockCheckVehicleConnection.mockResolvedValue({ connected: false, error: false });
 
@@ -80,8 +80,10 @@ describe('useSetupStepper', () => {
         useSetupStepper({ ...DEFAULT_OPTIONS, initialSetupStatus: 'pending_pairing' }),
       );
 
+      // Step 2 (config push) completes instantly in tests, so the hook
+      // settles on step 3 (connection polling).
       await waitFor(() => {
-        expect(result.current.step).toBe(2);
+        expect(result.current.step).toBe(3);
       });
       expect(mockUpdateSetupStatus).toHaveBeenCalledWith('vehicle-1', 'pairing_detected');
     });
@@ -202,8 +204,9 @@ describe('useSetupStepper', () => {
         result.current.onRetry();
       });
 
+      // After retry, pairing succeeds → config push (instant) → step 3.
       await waitFor(() => {
-        expect(result.current.step).toBe(2);
+        expect(result.current.step).toBe(3);
       });
     });
 
