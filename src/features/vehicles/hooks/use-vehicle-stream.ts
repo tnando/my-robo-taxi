@@ -8,8 +8,8 @@ import { VehicleWebSocket } from '@/lib/websocket';
 
 /** Return type of the useVehicleStream hook. */
 export interface UseVehicleStreamReturn {
-  /** Map of vehicle ID to latest vehicle state. */
-  vehicles: Map<string, Vehicle>;
+  /** Record of vehicle ID to latest vehicle state. */
+  vehicles: Record<string, Vehicle>;
   /** Current WebSocket connection status. */
   connectionStatus: ConnectionStatus;
   /** Manually trigger a reconnection attempt. */
@@ -25,8 +25,12 @@ const WS_URL = process.env.NEXT_PUBLIC_WS_URL
  * Hook for real-time vehicle telemetry via WebSocket.
  *
  * Manages WebSocket lifecycle (connect on mount, disconnect on unmount),
- * maintains a vehicle state map, and tracks connection status.
+ * maintains a vehicle state record, and tracks connection status.
  * Falls back gracefully when no WS endpoint is configured.
+ *
+ * Uses a plain Record instead of Map so React can detect unchanged references
+ * without allocating a new Map on every update. A new object reference is
+ * only returned when the vehicle data actually changed.
  *
  * @param initialVehicles — Initial vehicle data (from server render or mock data)
  * @param sessionToken — Auth token for WebSocket authentication
@@ -35,24 +39,24 @@ export function useVehicleStream(
   initialVehicles: Vehicle[],
   sessionToken?: string,
 ): UseVehicleStreamReturn {
-  const [vehicleMap, setVehicleMap] = useState<Map<string, Vehicle>>(() => {
-    const map = new Map<string, Vehicle>();
-    initialVehicles.forEach((v) => map.set(v.id, v));
-    return map;
+  const [vehicles, setVehicles] = useState<Record<string, Vehicle>>(() => {
+    const record: Record<string, Vehicle> = {};
+    initialVehicles.forEach((v) => { record[v.id] = v; });
+    return record;
   });
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
 
   const wsRef = useRef<VehicleWebSocket | null>(null);
 
-  // Handle incoming vehicle update — merge partial fields into existing state
+  // Handle incoming vehicle update — merge partial fields into existing state.
+  // Only returns a new reference when the vehicle data has actually changed,
+  // preventing unnecessary re-renders from identity churn.
   const handleUpdate = useCallback((update: VehicleUpdate) => {
-    setVehicleMap((prev) => {
-      const existing = prev.get(update.vehicleId);
+    setVehicles((prev) => {
+      const existing = prev[update.vehicleId];
       if (!existing) return prev;
-
-      const next = new Map(prev);
-      next.set(update.vehicleId, { ...existing, ...update.fields } as Vehicle);
-      return next;
+      const updated = { ...existing, ...update.fields } as Vehicle;
+      return { ...prev, [update.vehicleId]: updated };
     });
   }, []);
 
@@ -76,14 +80,13 @@ export function useVehicleStream(
     };
   }, [sessionToken, handleUpdate]);
 
-  // Sync initial vehicles when they change (e.g., SWR revalidation)
+  // Sync initial vehicles when they change (e.g., SWR revalidation).
+  // Preserves any real-time WS updates over the server-rendered snapshot.
   useEffect(() => {
-    setVehicleMap((prev) => {
-      const next = new Map<string, Vehicle>();
+    setVehicles((prev) => {
+      const next: Record<string, Vehicle> = {};
       initialVehicles.forEach((v) => {
-        // Preserve any real-time updates over server data
-        const existing = prev.get(v.id);
-        next.set(v.id, existing ?? v);
+        next[v.id] = prev[v.id] ?? v;
       });
       return next;
     });
@@ -95,7 +98,7 @@ export function useVehicleStream(
   }, []);
 
   return {
-    vehicles: vehicleMap,
+    vehicles,
     connectionStatus,
     reconnect,
   };
