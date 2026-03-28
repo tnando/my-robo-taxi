@@ -31,6 +31,19 @@ function getDestinationLabel(vehicle: Vehicle): string {
 }
 
 /**
+ * Derive a human-readable origin label. Prefers the drive record's address
+ * (populated by backend geocoding); falls back to coordinates from telemetry.
+ */
+function getOriginLabel(vehicle: Vehicle, currentDrive?: Drive): string {
+  if (currentDrive?.startAddress) return currentDrive.startAddress;
+  if (currentDrive?.startLocation) return currentDrive.startLocation;
+  if (vehicle.originLatitude != null && vehicle.originLongitude != null) {
+    return `${vehicle.originLatitude.toFixed(4)}, ${vehicle.originLongitude.toFixed(4)}`;
+  }
+  return 'Origin';
+}
+
+/**
  * Bottom sheet peek content when vehicle is driving.
  * Vehicle name, status badge, destination, trip progress bar, stats row.
  */
@@ -59,7 +72,7 @@ export function DrivingPeekContent({
       <TripProgressBar
         progress={tripProgress}
         stops={vehicle.stops ?? []}
-        originLabel={currentDrive?.startAddress || currentDrive?.startLocation || 'Origin'}
+        originLabel={getOriginLabel(vehicle, currentDrive)}
         destinationLabel={destinationLabel || 'Destination'}
       />
 
