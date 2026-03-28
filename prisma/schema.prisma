@@ -70,9 +70,13 @@ model Vehicle {
   fsdMilesToday    Float         @default(0)
   virtualKeyPaired Boolean       @default(false)
   setupStatus      SetupStatus   @default(pending_pairing)
-  destinationName  String?
-  destinationAddress String?
-  etaMinutes       Int?
+  destinationName      String?
+  destinationAddress   String?
+  destinationLatitude  Float?
+  destinationLongitude Float?
+  originLatitude       Float?
+  originLongitude      Float?
+  etaMinutes           Int?
   tripDistanceMiles    Float?
   tripDistanceRemaining Float?
   lastUpdated      DateTime      @default(now())

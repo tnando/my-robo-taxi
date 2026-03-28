@@ -110,6 +110,18 @@ export function mapPrismaVehicleToVehicle(prismaVehicle: PrismaVehicleWithStops)
   if (prismaVehicle.destinationAddress) {
     vehicle.destinationAddress = prismaVehicle.destinationAddress;
   }
+  if (prismaVehicle.destinationLatitude != null) {
+    vehicle.destinationLatitude = prismaVehicle.destinationLatitude;
+  }
+  if (prismaVehicle.destinationLongitude != null) {
+    vehicle.destinationLongitude = prismaVehicle.destinationLongitude;
+  }
+  if (prismaVehicle.originLatitude != null) {
+    vehicle.originLatitude = prismaVehicle.originLatitude;
+  }
+  if (prismaVehicle.originLongitude != null) {
+    vehicle.originLongitude = prismaVehicle.originLongitude;
+  }
   if (prismaVehicle.etaMinutes != null) {
     vehicle.etaMinutes = prismaVehicle.etaMinutes;
   }
