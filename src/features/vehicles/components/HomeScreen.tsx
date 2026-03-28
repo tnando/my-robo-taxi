@@ -54,12 +54,13 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
   const isSyncing = isAutoSyncing || isRefreshing;
 
   // Real-time telemetry via WebSocket — merges live updates into vehicle state.
+  // vehicles is a Record<string, Vehicle>; no Map allocation on each update.
   const { vehicles: liveVehicles } = useVehicleStream(vehicles, wsToken);
 
   // Use live vehicle data if available, fall back to server-rendered data.
   const allVehicles = useMemo(() => {
-    if (liveVehicles.size === 0) return vehicles;
-    return vehicles.map((v) => liveVehicles.get(v.id) ?? v);
+    if (Object.keys(liveVehicles).length === 0) return vehicles;
+    return vehicles.map((v) => liveVehicles[v.id] ?? v);
   }, [vehicles, liveVehicles]);
 
   const vehicle = allVehicles[currentVehicleIndex];
@@ -99,6 +100,7 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
           route={{ show: isDriving, coordinates: routePoints }}
           center={[vehicle.longitude, vehicle.latitude]}
           zoom={12}
+          fitButtonBottom={sheet.currentHeight + 20}
         >
           {/* Compass labels */}
           <CompassLabels sheetHeight={sheet.currentHeight} />
@@ -186,16 +188,14 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
   );
 }
 
-/** Safely extract routeCoordinates from WebSocket-merged vehicle state.
- *  The telemetry server injects this field via vehicle_update but it's
- *  not on the Vehicle type — check existence at runtime. */
+/**
+ * Extract live route coordinates from WebSocket-merged vehicle state.
+ * routeCoordinates is populated by the telemetry server from Tesla RouteLine
+ * and is now a typed field on Vehicle.
+ */
 function getLiveRoute(vehicle: Vehicle): [number, number][] | undefined {
-  if ('routeCoordinates' in vehicle) {
-    const coords = (vehicle as unknown as { routeCoordinates: unknown }).routeCoordinates;
-    if (Array.isArray(coords) && coords.length > 0) {
-      return coords as [number, number][];
-    }
+  if (vehicle.routeCoordinates && vehicle.routeCoordinates.length >= 2) {
+    return vehicle.routeCoordinates;
   }
   return undefined;
 }
-

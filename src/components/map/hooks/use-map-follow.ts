@@ -62,14 +62,20 @@ function guardedFlyTo(m: mapboxgl.Map, ref: GuardRef, mode: MapMode,
 }
 
 /** Fit the map to remaining route bounds (route-overview mode). */
-function fitToRoute(m: mapboxgl.Map, route: LngLat[], pos: LngLat, ref: GuardRef) {
+function fitToRoute(
+  m: mapboxgl.Map,
+  route: LngLat[],
+  pos: LngLat,
+  ref: GuardRef,
+  bottomPadding: number,
+) {
   withGuard(ref, 1000, () => {
     import('mapbox-gl').then((mapboxgl) => {
       const bounds = new mapboxgl.default.LngLatBounds();
       route.forEach((c) => bounds.extend(c as [number, number]));
       bounds.extend(pos as [number, number]);
       m.fitBounds(bounds, {
-        padding: { top: 80, bottom: 300, left: 60, right: 60 },
+        padding: { top: 80, bottom: bottomPadding, left: 60, right: 60 },
         bearing: 0, pitch: 0, maxZoom: 15, duration: 1000,
       });
     });
@@ -91,6 +97,7 @@ export function useMapFollow(
   speedMph: number = 0,
   hasActiveRoute: boolean = false,
   remainingRoute: LngLat[] | undefined = undefined,
+  bottomPadding: number = 300,
 ): UseMapFollowReturn {
   const [mapMode, setMapMode] = useState<MapMode>('north-up');
   const [followMode, setFollowMode] = useState(true);
@@ -135,7 +142,7 @@ export function useMapFollow(
     if (vehiclePosition[0] === 0 && vehiclePosition[1] === 0) return;
 
     if (mapMode === 'route-overview' && remainingRoute && remainingRoute.length >= 2) {
-      fitToRoute(m, remainingRoute, vehiclePosition, programmaticRef);
+      fitToRoute(m, remainingRoute, vehiclePosition, programmaticRef, bottomPadding);
       return;
     }
 
@@ -172,7 +179,7 @@ export function useMapFollow(
     setMapMode(nextMode);
 
     if (nextMode === 'route-overview' && remainingRoute && remainingRoute.length >= 2) {
-      fitToRoute(m, remainingRoute, vehiclePosition, programmaticRef);
+      fitToRoute(m, remainingRoute, vehiclePosition, programmaticRef, bottomPadding);
     } else {
       const cam = camFor(m, nextMode, vehiclePosition, heading, speedMph);
       withGuard(programmaticRef, EASE_TO_DURATION, () => {

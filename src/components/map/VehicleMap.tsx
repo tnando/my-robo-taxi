@@ -85,7 +85,7 @@ export function VehicleMap({
   );
 
   const { mapMode, isDisabled, isOffCenter, cycleMode, recenter } = useMapFollow(
-    map, mapLoaded, markerPos, heading, speed, hasActiveRoute, remainingRoute,
+    map, mapLoaded, markerPos, heading, speed, hasActiveRoute, remainingRoute, fitButtonBottom,
   );
 
   return (
