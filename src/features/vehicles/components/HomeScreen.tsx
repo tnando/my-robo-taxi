@@ -74,10 +74,16 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
 
   const isDriving = vehicle.status === 'driving';
 
-  // Prefer live route from WebSocket (decoded RouteLine from Tesla nav).
+  // Prefer live route from WebSocket (accumulated GPS path or Tesla nav polyline).
   // Fall back to stored route points from the database Drive record.
   const liveRoute = getLiveRoute(vehicle);
   const routePoints = (liveRoute && liveRoute.length >= 2) ? liveRoute : currentDrive?.routePoints;
+
+  // Detect whether the route is a driven GPS path (accumulated points ending
+  // near the vehicle) vs. a planned navigation route (ending at a distant
+  // destination). This controls how the route layer renders: driven paths use
+  // a single bright line; nav routes use the two-tone completed/remaining split.
+  const isDrivenPath = isDrivenGpsPath(routePoints, [vehicle.longitude, vehicle.latitude]);
 
   // Trip progress (0-1)
   const tripProgress =
@@ -97,7 +103,7 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
             heading: vehicle.heading,
             speed: vehicle.speed,
           }}
-          route={{ show: isDriving, coordinates: routePoints }}
+          route={{ show: isDriving, coordinates: routePoints, isDrivenPath }}
           center={[vehicle.longitude, vehicle.latitude]}
           zoom={12}
           fitButtonBottom={sheet.currentHeight + 20}
@@ -190,12 +196,35 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
 
 /**
  * Extract live route coordinates from WebSocket-merged vehicle state.
- * routeCoordinates is populated by the telemetry server from Tesla RouteLine
- * and is now a typed field on Vehicle.
+ *
+ * During active drives the telemetry server sends `routeCoordinates` as the
+ * accumulated GPS path (driven route). When Tesla's built-in navigation is
+ * active, `routeCoordinates` may instead contain the planned nav polyline.
  */
 function getLiveRoute(vehicle: Vehicle): [number, number][] | undefined {
   if (vehicle.routeCoordinates && vehicle.routeCoordinates.length >= 2) {
     return vehicle.routeCoordinates;
   }
   return undefined;
+}
+
+/**
+ * Determine whether a route represents a driven GPS path (accumulated points)
+ * rather than a planned navigation polyline.
+ *
+ * Heuristic: if the last coordinate in the route is within ~100 m of the
+ * vehicle's current position, the route is a driven path (the backend appends
+ * the latest GPS fix). A planned nav route ends at the destination, which is
+ * typically far away.
+ */
+function isDrivenGpsPath(
+  route: [number, number][] | undefined,
+  vehiclePos: [number, number],
+): boolean {
+  if (!route || route.length < 2) return false;
+  const last = route[route.length - 1];
+  const dlng = last[0] - vehiclePos[0];
+  const dlat = last[1] - vehiclePos[1];
+  // ~0.001 degrees is roughly 100 m at mid-latitudes
+  return (dlng * dlng + dlat * dlat) < 0.001 * 0.001;
 }

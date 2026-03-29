@@ -23,10 +23,12 @@ export interface VehicleState {
 
 /** Route display configuration. */
 export interface RouteConfig {
-  /** Show the two-tone route line. */
+  /** Show the route line. */
   show?: boolean;
   /** Route coordinates as [lng, lat] pairs. */
   coordinates?: LngLat[];
+  /** True when coordinates represent a driven GPS path (not a planned nav route). */
+  isDrivenPath?: boolean;
 }
 
 /** Props for the VehicleMap component. */
@@ -67,6 +69,7 @@ export function VehicleMap({
   const speed = vehicle?.speed ?? 0;
   const showRoute = route?.show ?? false;
   const routeCoordinates = route?.coordinates;
+  const isDrivenPath = route?.isDrivenPath ?? false;
 
   // Guard against 0,0 coordinates (Tesla returns null when vehicle is asleep/offline,
   // mapper defaults to 0). Fall back to the Mapbox default center.
@@ -81,7 +84,7 @@ export function VehicleMap({
   const hasActiveRoute = showRoute && !!routeCoordinates && routeCoordinates.length >= 2;
 
   const { remainingRoute } = useRouteLayer(
-    map, mapLoaded, showRoute, routeCoordinates, markerPos,
+    map, mapLoaded, showRoute, routeCoordinates, markerPos, isDrivenPath,
   );
 
   const { mapMode, isDisabled, isOffCenter, cycleMode, recenter } = useMapFollow(

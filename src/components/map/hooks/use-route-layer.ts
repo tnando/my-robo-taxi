@@ -45,19 +45,16 @@ export interface UseRouteLayerReturn {
 // ── Main hook ──────────────────────────────────────────────────────────────
 
 /**
- * Renders the navigation route as two overlapping layers for a flicker-free
- * two-tone effect:
+ * Renders a route as one or two overlapping Mapbox layers.
  *
- * 1. **Completed layer** (dim gold): Shows the full route. Set once, never
- *    updated unless the route itself changes. No flicker.
+ * **Navigation route** (two-tone): When `isDrivenPath` is false, uses two
+ * layers for a flicker-free dim/bright effect — dim gold behind the vehicle,
+ * bright gold ahead. The remaining layer updates only when the vehicle
+ * passes a new waypoint (~30s on a highway), avoiding per-tick flicker.
  *
- * 2. **Remaining layer** (bright gold): Shows from the current waypoint to
- *    the end of the route. Updated via `setData` ONLY when the vehicle
- *    passes a new waypoint (every ~30s on a highway), not on every
- *    position tick (~1s). This eliminates the flicker caused by calling
- *    `setPaintProperty('line-gradient', ...)` on every tick.
- *
- * The visual result: dim gold behind the vehicle, bright gold ahead.
+ * **Driven GPS path** (single layer): When `isDrivenPath` is true, the route
+ * represents the vehicle's accumulated GPS trail. All points are behind the
+ * vehicle, so the entire route renders as a single bright gold line.
  */
 export function useRouteLayer(
   map: React.RefObject<mapboxgl.Map | null>,
@@ -65,6 +62,7 @@ export function useRouteLayer(
   showRoute: boolean,
   routeCoordinates: LngLat[] | undefined,
   vehiclePosition: LngLat,
+  isDrivenPath = false,
 ): UseRouteLayerReturn {
   const startMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const endMarkerRef = useRef<mapboxgl.Marker | null>(null);
@@ -106,7 +104,11 @@ export function useRouteLayer(
 
     const setup = () => {
       try {
-        // ── Completed layer (full route, dim) ──────────────────────────
+        // ── Completed layer ───────────────────────────────────────────
+        // For a driven GPS path: bright gold (single-layer rendering).
+        // For a nav route: dim gold (two-layer dim/bright split).
+        const completedColor = isDrivenPath ? GOLD_BRIGHT : GOLD_DIM;
+
         if (!m.getSource(COMPLETED_SOURCE)) {
           m.addSource(COMPLETED_SOURCE, {
             type: 'geojson',
@@ -123,21 +125,26 @@ export function useRouteLayer(
             source: COMPLETED_SOURCE,
             layout: { 'line-join': 'round', 'line-cap': 'round' },
             paint: {
-              'line-color': GOLD_DIM,
+              'line-color': completedColor,
               'line-width': 4,
             },
           });
+        } else {
+          m.setPaintProperty(COMPLETED_LAYER, 'line-color', completedColor);
         }
 
         // ── Remaining layer (from vehicle onward, bright) ──────────────
+        // Only used for nav routes. For driven paths, show empty data.
+        const remainingData = isDrivenPath ? EMPTY_LINE : lineFeature(stableRoute);
+
         if (!m.getSource(REMAINING_SOURCE)) {
           m.addSource(REMAINING_SOURCE, {
             type: 'geojson',
-            data: lineFeature(stableRoute),
+            data: remainingData,
           });
         } else {
           (m.getSource(REMAINING_SOURCE) as mapboxgl.GeoJSONSource)
-            .setData(lineFeature(stableRoute));
+            .setData(remainingData);
         }
         if (!m.getLayer(REMAINING_LAYER)) {
           m.addLayer({
@@ -157,7 +164,7 @@ export function useRouteLayer(
 
       layersAddedRef.current = true;
       lastWaypointIndexRef.current = -1;
-      setRemainingRoute(stableRoute);
+      setRemainingRoute(isDrivenPath ? undefined : stableRoute);
       addEndpointMarkers(m, stableRoute, startMarkerRef, endMarkerRef);
     };
 
@@ -172,10 +179,14 @@ export function useRouteLayer(
       layersAddedRef.current = false;
       lastWaypointIndexRef.current = -1;
     };
-  }, [map, mapLoaded, showRoute, stableRoute]);
+  }, [map, mapLoaded, showRoute, stableRoute, isDrivenPath]);
 
   // ── Update remaining layer when vehicle passes a new waypoint ──────────
+  // Skipped for driven GPS paths — the entire route is already rendered as
+  // a single bright line, and the "remaining" concept doesn't apply.
   useEffect(() => {
+    if (isDrivenPath) return;
+
     const m = map.current;
     if (!m || !mapLoaded || !showRoute || !stableRoute || stableRoute.length < 2) {
       return;
@@ -201,7 +212,7 @@ export function useRouteLayer(
       );
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, mapLoaded, showRoute, stableRoute, vehiclePosition[0], vehiclePosition[1]]);
+  }, [map, mapLoaded, showRoute, stableRoute, isDrivenPath, vehiclePosition[0], vehiclePosition[1]]);
 
   return { remainingRoute };
 }
