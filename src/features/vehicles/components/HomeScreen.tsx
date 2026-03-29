@@ -75,15 +75,17 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
   const isDriving = vehicle.status === 'driving';
 
   // The backend sends two distinct route fields via WebSocket:
+  // - navRouteCoordinates: Tesla's planned navigation polyline (route to destination)
   // - routeCoordinates: accumulated GPS track (driven path)
-  // - navRouteCoordinates: Tesla's planned navigation polyline
-  // Prefer the live driven GPS path; fall back to stored route points.
+  // Prefer the nav route (planned path ahead); fall back to driven GPS path or DB route points.
+  const navRoute = getLiveNavRoute(vehicle);
   const liveRoute = getLiveRoute(vehicle);
-  const routePoints = (liveRoute && liveRoute.length >= 2) ? liveRoute : currentDrive?.routePoints;
+  const routePoints = (navRoute && navRoute.length >= 2)
+    ? navRoute
+    : (liveRoute && liveRoute.length >= 2) ? liveRoute : currentDrive?.routePoints;
 
-  // The driven GPS path is explicitly identified by the backend — no heuristic needed.
-  // When we have live route coordinates, they are always the driven path.
-  const isDrivenPath = !!(liveRoute && liveRoute.length >= 2);
+  // It's a driven GPS path only when we're using the GPS trail (not the nav route).
+  const isDrivenPath = !navRoute && !!(liveRoute && liveRoute.length >= 2);
 
   // Trip progress (0-1)
   const tripProgress =
