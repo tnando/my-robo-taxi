@@ -105,18 +105,19 @@ export function useRouteLayer(
     const setup = () => {
       try {
         // ── Completed layer ───────────────────────────────────────────
-        // For a driven GPS path: bright gold (single-layer rendering).
-        // For a nav route: dim gold (two-layer dim/bright split).
+        // For a driven GPS path: the full trail in bright gold.
+        // For a nav route: empty — we only show the route ahead.
         const completedColor = isDrivenPath ? GOLD_BRIGHT : GOLD_DIM;
+        const completedData = isDrivenPath ? lineFeature(stableRoute) : EMPTY_LINE;
 
         if (!m.getSource(COMPLETED_SOURCE)) {
           m.addSource(COMPLETED_SOURCE, {
             type: 'geojson',
-            data: lineFeature(stableRoute),
+            data: completedData,
           });
         } else {
           (m.getSource(COMPLETED_SOURCE) as mapboxgl.GeoJSONSource)
-            .setData(lineFeature(stableRoute));
+            .setData(completedData);
         }
         if (!m.getLayer(COMPLETED_LAYER)) {
           m.addLayer({
@@ -165,7 +166,13 @@ export function useRouteLayer(
       layersAddedRef.current = true;
       lastWaypointIndexRef.current = -1;
       setRemainingRoute(isDrivenPath ? undefined : stableRoute);
-      addEndpointMarkers(m, stableRoute, startMarkerRef, endMarkerRef);
+      // For nav routes, only show the destination (end) marker — not the origin.
+      // For driven paths, show both start and end markers.
+      if (isDrivenPath) {
+        addEndpointMarkers(m, stableRoute, startMarkerRef, endMarkerRef);
+      } else {
+        addDestinationMarker(m, stableRoute, endMarkerRef);
+      }
     };
 
     if (m.isStyleLoaded()) {
@@ -238,6 +245,19 @@ function quickDistSq(a: LngLat, b: LngLat): number {
   const dx = a[0] - b[0];
   const dy = a[1] - b[1];
   return dx * dx + dy * dy;
+}
+
+/** Add only a destination (gold) marker at the route end. */
+function addDestinationMarker(
+  m: mapboxgl.Map,
+  route: LngLat[],
+  endRef: React.MutableRefObject<mapboxgl.Marker | null>,
+): void {
+  const endEl = document.createElement('div');
+  endEl.style.cssText = `width:10px;height:10px;border-radius:50%;background:${MAPBOX_GOLD};border:2px solid rgba(255,255,255,0.5);box-shadow:0 0 6px rgba(201,168,76,0.5);`;
+  endRef.current = new mapboxgl.Marker({ element: endEl })
+    .setLngLat(route[route.length - 1])
+    .addTo(m);
 }
 
 /** Add start (green) and end (gold) endpoint markers. */
