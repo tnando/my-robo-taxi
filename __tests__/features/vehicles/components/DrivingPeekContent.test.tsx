@@ -44,7 +44,7 @@ describe('DrivingPeekContent', () => {
     expect(screen.getByText('Heading to Whole Foods')).toBeInTheDocument();
   });
 
-  it('falls back to coordinates when destinationName is absent', () => {
+  it('shows "Driving" when destinationName is absent (no coordinate fallback)', () => {
     render(
       <DrivingPeekContent
         vehicle={makeVehicle({
@@ -55,7 +55,7 @@ describe('DrivingPeekContent', () => {
         tripProgress={0.3}
       />,
     );
-    expect(screen.getByText(/Heading to 30\.2672, -97\.7431/)).toBeInTheDocument();
+    expect(screen.getByText('Driving')).toBeInTheDocument();
   });
 
   it('shows just "Driving" when neither name nor coordinates are available', () => {

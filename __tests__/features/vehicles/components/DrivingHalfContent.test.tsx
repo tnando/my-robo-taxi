@@ -109,7 +109,7 @@ describe('DrivingHalfContent', () => {
       expect(screen.getByText('Whole Foods')).toBeInTheDocument();
     });
 
-    it('falls back to coordinates when no name', () => {
+    it('shows empty destination when no name (no coordinate fallback)', () => {
       render(
         <DrivingHalfContent
           vehicle={makeVehicle({
@@ -119,7 +119,8 @@ describe('DrivingHalfContent', () => {
           })}
         />,
       );
-      expect(screen.getByText(/30\.2672, -97\.7431/)).toBeInTheDocument();
+      // Should NOT show raw coordinates
+      expect(screen.queryByText(/30\.2672/)).not.toBeInTheDocument();
     });
 
     it('appends destinationAddress after em-dash when present', () => {
