@@ -55,7 +55,8 @@ describe('DrivingPeekContent', () => {
         tripProgress={0.3}
       />,
     );
-    expect(screen.getByText('Driving')).toBeInTheDocument();
+    // "Driving" appears in both the text label and StatusBadge
+    expect(screen.queryByText(/Heading to/)).not.toBeInTheDocument();
   });
 
   it('shows just "Driving" when neither name nor coordinates are available', () => {
