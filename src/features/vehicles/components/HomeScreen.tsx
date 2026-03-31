@@ -72,26 +72,28 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
     [vehicle.id, drives],
   );
 
-  const isDriving = vehicle.status === 'driving';
+  // Derive driving status from gear — don't rely on the backend status field
+  // which can be stale after page refresh (DB says "parked" until a gear
+  // update arrives, but Tesla only sends gear on CHANGE).
+  const isDriving = vehicle.gearPosition === 'D' || vehicle.gearPosition === 'R'
+    || vehicle.speed > 0
+    || vehicle.status === 'driving';
 
-  // Show route when nav is active OR vehicle is driving with route data.
-  // This prevents the route from disappearing during brief park→drive transitions
-  // (e.g. red lights) when Tesla nav is still active.
-  const navRoute = getLiveNavRoute(vehicle);
+  // Only show the nav route when Tesla navigation is genuinely active
+  // (has a destination name). Stale navRouteCoordinates can persist after
+  // nav is cancelled — don't trust coordinates alone.
+  const hasActiveNav = !!vehicle.destinationName;
+  const navRoute = hasActiveNav ? getLiveNavRoute(vehicle) : undefined;
   const hasNavRoute = !!(navRoute && navRoute.length >= 2);
-  const showRoute = isDriving || hasNavRoute;
+  const showRoute = isDriving && hasNavRoute;
 
-  // The backend sends two distinct route fields via WebSocket:
-  // - navRouteCoordinates: Tesla's planned navigation polyline (route to destination)
-  // - routeCoordinates: accumulated GPS track (driven path)
-  // Prefer the nav route (planned path ahead); fall back to driven GPS path or DB route points.
-  const liveRoute = getLiveRoute(vehicle);
-  const routePoints = (navRoute && navRoute.length >= 2)
-    ? navRoute
-    : (liveRoute && liveRoute.length >= 2) ? liveRoute : currentDrive?.routePoints;
+  // Route coordinates: only use nav route when nav is active.
+  // Don't fall back to GPS trail or DB route points — those draw behind
+  // the car, which is not the desired behavior.
+  const routePoints = hasNavRoute ? navRoute : undefined;
 
-  // It's a driven GPS path only when we're using the GPS trail (not the nav route).
-  const isDrivenPath = !navRoute && !!(liveRoute && liveRoute.length >= 2);
+  // Nav route is never a "driven path" — it's the planned route ahead.
+  const isDrivenPath = false;
 
   // Trip progress (0-1)
   const tripProgress =
@@ -200,20 +202,6 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
       </BottomSheet>
     </div>
   );
-}
-
-/**
- * Extract the driven GPS path from WebSocket-merged vehicle state.
- *
- * The backend now explicitly sends `routeCoordinates` as the accumulated GPS
- * track (driven path only). The planned nav polyline is sent separately as
- * `navRouteCoordinates`.
- */
-function getLiveRoute(vehicle: Vehicle): [number, number][] | undefined {
-  if (vehicle.routeCoordinates && vehicle.routeCoordinates.length >= 2) {
-    return vehicle.routeCoordinates;
-  }
-  return undefined;
 }
 
 /**

@@ -19,26 +19,27 @@ export interface DrivingPeekContentProps {
 
 /**
  * Derive a human-readable destination label from available vehicle data.
- * Prefers the Tesla-provided name; falls back to coordinates; omits entirely
- * when no data is available so the "Heading to" line is suppressed.
+ * Only uses Tesla's destination name — never raw coordinates.
  */
 function getDestinationLabel(vehicle: Vehicle): string {
   if (vehicle.destinationName) return vehicle.destinationName;
-  if (vehicle.destinationLatitude != null && vehicle.destinationLongitude != null) {
-    return `${vehicle.destinationLatitude.toFixed(4)}, ${vehicle.destinationLongitude.toFixed(4)}`;
-  }
   return '';
+}
+
+/** Check if a location string is effectively empty (zero coordinates). */
+function isEmptyLocation(loc: string): boolean {
+  return !loc || loc.startsWith('0.0') || loc === '';
 }
 
 /**
  * Derive a human-readable origin label from the drive record.
- * Uses the drive's start address or location name — never falls back to
- * vehicle.originLatitude/originLongitude, which reflects Tesla's nav origin
- * (not necessarily where the drive actually started).
+ * Filters out (0,0) coordinates which are protobuf defaults for "not set".
  */
 function getOriginLabel(_vehicle: Vehicle, currentDrive?: Drive): string {
   if (currentDrive?.startAddress) return currentDrive.startAddress;
-  if (currentDrive?.startLocation) return currentDrive.startLocation;
+  if (currentDrive?.startLocation && !isEmptyLocation(currentDrive.startLocation)) {
+    return currentDrive.startLocation;
+  }
   return 'Origin';
 }
 
@@ -61,7 +62,7 @@ export function DrivingPeekContent({
           <h2 className="text-lg font-semibold text-text-primary">{vehicle.name}</h2>
           <GearIndicator gearPosition={vehicle.gearPosition} status={vehicle.status} />
         </div>
-        <StatusBadge status={vehicle.status} />
+        <StatusBadge status="driving" />
       </div>
       <p className="text-sm text-gold font-light mb-3">
         {destinationLabel ? `Heading to ${destinationLabel}` : 'Driving'}

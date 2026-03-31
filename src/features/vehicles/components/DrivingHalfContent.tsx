@@ -21,20 +21,19 @@ export interface DrivingHalfContentProps {
  */
 function getStartLabel(_vehicle: Vehicle, currentDrive?: Drive): string {
   if (currentDrive?.startAddress) return currentDrive.startAddress;
-  if (currentDrive?.startLocation) return currentDrive.startLocation;
+  if (currentDrive?.startLocation && !currentDrive.startLocation.startsWith('0.0')) {
+    return currentDrive.startLocation;
+  }
   return 'Current location';
 }
 
 /**
  * Derive a human-readable destination label from available vehicle data.
- * Prefers the Tesla-provided name; falls back to coordinates.
+ * Only uses Tesla's destination name — never raw coordinates.
  */
 function getDestinationLabel(vehicle: Vehicle): string {
   if (vehicle.destinationName) return vehicle.destinationName;
-  if (vehicle.destinationLatitude != null && vehicle.destinationLongitude != null) {
-    return `${vehicle.destinationLatitude.toFixed(4)}, ${vehicle.destinationLongitude.toFixed(4)}`;
-  }
-  return 'Unknown';
+  return '';
 }
 
 /**
