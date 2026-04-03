@@ -56,7 +56,7 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
 
   // Real-time telemetry via WebSocket — merges live updates into vehicle state.
   // vehicles is a Record<string, Vehicle>; no Map allocation on each update.
-  const { vehicles: liveVehicles } = useVehicleStream(vehicles, wsToken);
+  const { vehicles: liveVehicles, lastUpdateFields } = useVehicleStream(vehicles, wsToken);
 
   // Use live vehicle data if available, fall back to server-rendered data.
   const allVehicles = useMemo(() => {
@@ -74,10 +74,12 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
   );
 
   // Detect route polyline changes to show skeleton loading on stale text fields
+  const vehicleLastFields = lastUpdateFields[vehicle.id] ?? [];
   const { isRouteTransitioning } = useRouteTransition(
     vehicle.navRouteCoordinates,
     vehicle.destinationName,
     vehicle.etaMinutes,
+    vehicleLastFields,
   );
 
   // Derive driving status from gear — don't rely on the backend status field

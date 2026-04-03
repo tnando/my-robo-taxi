@@ -89,6 +89,11 @@ describe('useVehicleStream', () => {
     expect(() => result.current.reconnect()).not.toThrow();
   });
 
+  it('initialises lastUpdateFields as an empty Record', () => {
+    const { result } = renderHook(() => useVehicleStream(oneVehicle));
+    expect(result.current.lastUpdateFields).toEqual({});
+  });
+
   it('adds a new vehicle when the initial vehicles prop gains an entry', () => {
     // Start with one vehicle, then rerender with two
     const v1Only = [makeVehicle({ id: 'v1', name: 'Alpha' })];

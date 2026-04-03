@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-/** Timeout (ms) before the transitioning state auto-clears. */
-const TRANSITION_TIMEOUT_MS = 2000;
+/** Failsafe timeout (ms) — clears skeleton if nav text fields never arrive. */
+const FAILSAFE_TIMEOUT_MS = 10_000;
+
+/** Nav text field names that signal the skeleton can be cleared. */
+const NAV_TEXT_FIELDS = ['destinationName', 'etaMinutes'];
 
 /**
  * Fingerprint a route polyline by its length, first, and last coordinate.
@@ -21,29 +24,36 @@ function routeFingerprint(coords: [number, number][] | undefined): string | null
  *
  * When `navRouteCoordinates` changes significantly (different fingerprint),
  * `isRouteTransitioning` becomes true. It clears when:
- * - `destinationName` or `etaMinutes` change (the fields caught up), OR
- * - A timeout expires (handles same-destination reroutes where text stays the same)
+ * - `lastUpdateFields` includes `destinationName` or `etaMinutes` (field-aware), OR
+ * - `destinationName` or `etaMinutes` VALUES change (same-message delivery fallback), OR
+ * - A 10s failsafe timeout expires (handles extreme edge cases)
  *
  * @param navRouteCoordinates — Current route polyline from vehicle state
  * @param destinationName — Current destination name from vehicle state
  * @param etaMinutes — Current ETA in minutes from vehicle state
+ * @param lastUpdateFields — Field names from the most recent WebSocket update
  */
 export function useRouteTransition(
   navRouteCoordinates: [number, number][] | undefined,
   destinationName: string | undefined,
   etaMinutes: number | undefined,
+  lastUpdateFields: string[],
 ): { isRouteTransitioning: boolean } {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Track previous fingerprints to detect changes
+  // Track previous fingerprints and stale values for comparison
   const prevRouteRef = useRef<string | null>(null);
   const staleDestRef = useRef<string | undefined>(undefined);
   const staleEtaRef = useRef<number | undefined>(undefined);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Detect route fingerprint changes
+  // Flag to skip the first render's lastUpdateFields after a route change,
+  // since that render carries the route change itself, not the nav text update.
+  const watchingRef = useRef(false);
+
   const currentFingerprint = routeFingerprint(navRouteCoordinates);
 
+  // Detect route fingerprint changes — start transitioning
   useEffect(() => {
     // Skip initial mount — no transition on first render
     if (prevRouteRef.current === null) {
@@ -56,17 +66,43 @@ export function useRouteTransition(
       staleDestRef.current = destinationName;
       staleEtaRef.current = etaMinutes;
       setIsTransitioning(true);
+      watchingRef.current = false; // Don't check this render's fields
       prevRouteRef.current = currentFingerprint;
 
-      // Auto-clear after timeout (handles same-destination reroutes)
+      // Start failsafe timeout (10s) — clears skeleton even if nav text never arrives
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
         setIsTransitioning(false);
-      }, TRANSITION_TIMEOUT_MS);
+      }, FAILSAFE_TIMEOUT_MS);
     }
   }, [currentFingerprint, destinationName, etaMinutes]);
 
-  // Clear transition when destination or ETA actually update
+  // Watch for nav text fields in subsequent WebSocket updates
+  useEffect(() => {
+    if (!isTransitioning) {
+      watchingRef.current = false;
+      return;
+    }
+
+    // Skip the first render after route change (it carries the route update's fields)
+    if (!watchingRef.current) {
+      watchingRef.current = true;
+      return;
+    }
+
+    // Check if nav text fields arrived in this update
+    const hasNavText = lastUpdateFields.some((f) => NAV_TEXT_FIELDS.includes(f));
+    if (hasNavText) {
+      setIsTransitioning(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    }
+  }, [isTransitioning, lastUpdateFields]);
+
+  // Also clear on value changes (handles same-message delivery where
+  // nav text arrives in the same WebSocket message as coordinates)
   useEffect(() => {
     if (!isTransitioning) return;
 

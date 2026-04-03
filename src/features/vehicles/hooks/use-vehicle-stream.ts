@@ -14,6 +14,8 @@ export interface UseVehicleStreamReturn {
   connectionStatus: ConnectionStatus;
   /** Manually trigger a reconnection attempt. */
   reconnect: () => void;
+  /** Field names from the most recent WebSocket update, keyed by vehicle ID. */
+  lastUpdateFields: Record<string, string[]>;
 }
 
 /** WebSocket URL from environment — empty disables WebSocket. */
@@ -45,12 +47,14 @@ export function useVehicleStream(
     return record;
   });
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
+  const [lastUpdateFields, setLastUpdateFields] = useState<Record<string, string[]>>({});
 
   const wsRef = useRef<VehicleWebSocket | null>(null);
 
   // Handle incoming vehicle update — merge partial fields into existing state.
   // Only returns a new reference when the vehicle data has actually changed,
   // preventing unnecessary re-renders from identity churn.
+  // Also tracks which fields arrived so consumers can react to field presence.
   const handleUpdate = useCallback((update: VehicleUpdate) => {
     setVehicles((prev) => {
       const existing = prev[update.vehicleId];
@@ -58,6 +62,10 @@ export function useVehicleStream(
       const updated = { ...existing, ...update.fields } as Vehicle;
       return { ...prev, [update.vehicleId]: updated };
     });
+    setLastUpdateFields((prev) => ({
+      ...prev,
+      [update.vehicleId]: Object.keys(update.fields),
+    }));
   }, []);
 
   // Connect/disconnect lifecycle
@@ -101,5 +109,6 @@ export function useVehicleStream(
     vehicles,
     connectionStatus,
     reconnect,
+    lastUpdateFields,
   };
 }
