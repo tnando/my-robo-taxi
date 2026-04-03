@@ -50,4 +50,20 @@ describe('TripProgressBar', () => {
     const pulsingDot = container.querySelector('.animate-gold-glow');
     expect(pulsingDot).toBeTruthy();
   });
+
+  it('shows skeletons for labels when route is transitioning', () => {
+    const { container } = render(
+      <TripProgressBar
+        progress={0.5}
+        stops={[]}
+        originLabel="Home"
+        destinationLabel="Work"
+        isRouteTransitioning
+      />,
+    );
+    expect(screen.queryByText('Home')).not.toBeInTheDocument();
+    expect(screen.queryByText('Work')).not.toBeInTheDocument();
+    const skeletons = container.querySelectorAll('[aria-label="Loading"]');
+    expect(skeletons.length).toBe(2);
+  });
 });

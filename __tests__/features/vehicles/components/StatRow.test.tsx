@@ -47,4 +47,24 @@ describe('StatRow', () => {
     const batteryValue = screen.getByText('15%');
     expect(batteryValue.className).toContain('text-battery-low');
   });
+
+  it('shows skeleton for ETA when route is transitioning', () => {
+    const { container } = render(
+      <StatRow etaMinutes={12} speed={65} chargeLevel={55} isRouteTransitioning />,
+    );
+    // ETA value should be replaced by skeleton
+    expect(screen.queryByText('12 min')).not.toBeInTheDocument();
+    // ETA label still visible
+    expect(screen.getByText('ETA')).toBeInTheDocument();
+    // Skeleton element present
+    expect(container.querySelector('[aria-label="Loading"]')).toBeTruthy();
+  });
+
+  it('does not show skeleton when not transitioning', () => {
+    const { container } = render(
+      <StatRow etaMinutes={12} speed={65} chargeLevel={55} isRouteTransitioning={false} />,
+    );
+    expect(screen.getByText('12 min')).toBeInTheDocument();
+    expect(container.querySelector('[aria-label="Loading"]')).toBeNull();
+  });
 });
