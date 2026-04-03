@@ -102,4 +102,16 @@ describe('DrivingPeekContent', () => {
     );
     expect(screen.getByText('Destination')).toBeInTheDocument();
   });
+
+  it('shows skeleton instead of destination text when route is transitioning', () => {
+    const { container } = render(
+      <DrivingPeekContent
+        vehicle={makeVehicle({ destinationName: 'Whole Foods' })}
+        tripProgress={0.3}
+        isRouteTransitioning
+      />,
+    );
+    expect(screen.queryByText('Heading to Whole Foods')).not.toBeInTheDocument();
+    expect(container.querySelector('[aria-label="Loading"]')).toBeTruthy();
+  });
 });

@@ -1,6 +1,8 @@
 import type { Vehicle } from '@/types/vehicle';
 import type { Drive } from '@/types/drive';
 
+import { Skeleton } from '@/components/ui/Skeleton';
+
 import { ClimateCard, climateCardPropsFromVehicle } from './ClimateCard';
 import { VehicleDetailsBlock } from './VehicleDetailsBlock';
 import { StopsList } from './StopsList';
@@ -11,6 +13,8 @@ export interface DrivingHalfContentProps {
   vehicle: Vehicle;
   /** The current drive (for start location). */
   currentDrive?: Drive;
+  /** Whether route-related fields are transitioning (show skeleton). */
+  isRouteTransitioning?: boolean;
 }
 
 /**
@@ -40,7 +44,11 @@ function getDestinationLabel(vehicle: Vehicle): string {
  * Extended bottom sheet content when vehicle is driving (half state).
  * Start/destination, stops, vehicle details, odometer, FSD, temps, timestamp.
  */
-export function DrivingHalfContent({ vehicle, currentDrive }: DrivingHalfContentProps) {
+export function DrivingHalfContent({
+  vehicle,
+  currentDrive,
+  isRouteTransitioning,
+}: DrivingHalfContentProps) {
   const startLabel = getStartLabel(vehicle, currentDrive);
   const destinationLabel = getDestinationLabel(vehicle);
 
@@ -51,16 +59,24 @@ export function DrivingHalfContent({ vehicle, currentDrive }: DrivingHalfContent
       {/* Start / Destination */}
       <div className="mb-5">
         <p className="text-text-muted text-xs font-medium uppercase tracking-wider mb-1">Start</p>
-        <p className="text-text-primary text-sm font-light">{startLabel}</p>
+        {isRouteTransitioning ? (
+          <Skeleton className="h-4 w-44" />
+        ) : (
+          <p className="text-text-primary text-sm font-light">{startLabel}</p>
+        )}
       </div>
 
       <div className="mb-5">
         <p className="text-text-muted text-xs font-medium uppercase tracking-wider mb-1">Destination</p>
-        <p className="text-text-primary text-sm font-light">
-          {vehicle.destinationAddress
-            ? `${destinationLabel} — ${vehicle.destinationAddress}`
-            : destinationLabel}
-        </p>
+        {isRouteTransitioning ? (
+          <Skeleton className="h-4 w-56" />
+        ) : (
+          <p className="text-text-primary text-sm font-light">
+            {vehicle.destinationAddress
+              ? `${destinationLabel} — ${vehicle.destinationAddress}`
+              : destinationLabel}
+          </p>
+        )}
       </div>
 
       {/* Stops */}

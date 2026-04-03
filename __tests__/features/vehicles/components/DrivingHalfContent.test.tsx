@@ -149,4 +149,18 @@ describe('DrivingHalfContent', () => {
     render(<DrivingHalfContent vehicle={makeVehicle({ odometerMiles: 12345 })} />);
     expect(screen.getByText('12,345 mi')).toBeInTheDocument();
   });
+
+  it('shows skeletons for start and destination when route is transitioning', () => {
+    const { container } = render(
+      <DrivingHalfContent
+        vehicle={makeVehicle({ destinationName: 'Airport' })}
+        currentDrive={makeDrive({ startAddress: '100 Oak St' })}
+        isRouteTransitioning
+      />,
+    );
+    expect(screen.queryByText('100 Oak St')).not.toBeInTheDocument();
+    expect(screen.queryByText('Airport')).not.toBeInTheDocument();
+    const skeletons = container.querySelectorAll('[aria-label="Loading"]');
+    expect(skeletons.length).toBe(2);
+  });
 });

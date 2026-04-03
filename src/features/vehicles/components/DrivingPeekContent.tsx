@@ -2,6 +2,7 @@ import type { Vehicle } from '@/types/vehicle';
 import type { Drive } from '@/types/drive';
 
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 import { GearIndicator } from './GearIndicator';
 import { TripProgressBar } from './TripProgressBar';
@@ -15,6 +16,8 @@ export interface DrivingPeekContentProps {
   currentDrive?: Drive;
   /** Trip completion fraction (0-1). */
   tripProgress: number;
+  /** Whether route-related fields are transitioning (show skeleton). */
+  isRouteTransitioning?: boolean;
 }
 
 /**
@@ -51,6 +54,7 @@ export function DrivingPeekContent({
   vehicle,
   currentDrive,
   tripProgress,
+  isRouteTransitioning,
 }: DrivingPeekContentProps) {
   const destinationLabel = getDestinationLabel(vehicle);
 
@@ -64,9 +68,13 @@ export function DrivingPeekContent({
         </div>
         <StatusBadge status="driving" />
       </div>
-      <p className="text-sm text-gold font-light mb-3">
-        {destinationLabel ? `Heading to ${destinationLabel}` : 'Driving'}
-      </p>
+      {isRouteTransitioning ? (
+        <Skeleton className="h-4 w-40 mb-3" />
+      ) : (
+        <p className="text-sm text-gold font-light mb-3">
+          {destinationLabel ? `Heading to ${destinationLabel}` : 'Driving'}
+        </p>
+      )}
 
       {/* Trip progress bar */}
       <TripProgressBar
@@ -74,6 +82,7 @@ export function DrivingPeekContent({
         stops={vehicle.stops ?? []}
         originLabel={getOriginLabel(vehicle, currentDrive)}
         destinationLabel={destinationLabel || 'Destination'}
+        isRouteTransitioning={isRouteTransitioning}
       />
 
       {/* Key stats row */}
@@ -81,6 +90,7 @@ export function DrivingPeekContent({
         etaMinutes={vehicle.etaMinutes}
         speed={vehicle.speed}
         chargeLevel={vehicle.chargeLevel}
+        isRouteTransitioning={isRouteTransitioning}
       />
     </div>
   );

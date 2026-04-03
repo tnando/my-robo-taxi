@@ -1,5 +1,7 @@
 import type { TripStop } from '@/types/vehicle';
 
+import { Skeleton } from '@/components/ui/Skeleton';
+
 /** Props for the TripProgressBar component. */
 export interface TripProgressBarProps {
   /** Trip completion fraction (0-1). */
@@ -10,6 +12,8 @@ export interface TripProgressBarProps {
   originLabel: string;
   /** Destination location label. */
   destinationLabel: string;
+  /** Whether route-related fields are transitioning (show skeleton). */
+  isRouteTransitioning?: boolean;
 }
 
 /**
@@ -21,6 +25,7 @@ export function TripProgressBar({
   stops,
   originLabel,
   destinationLabel,
+  isRouteTransitioning,
 }: TripProgressBarProps) {
   return (
     <div className="mb-3">
@@ -67,8 +72,16 @@ export function TripProgressBar({
       {/* Labels below the bar */}
       <div className="relative mt-1.5">
         <div className="flex justify-between">
-          <span className="text-[10px] text-text-muted font-light">{originLabel}</span>
-          <span className="text-[10px] text-text-muted font-light">{destinationLabel}</span>
+          {isRouteTransitioning ? (
+            <Skeleton className="h-3 w-20" />
+          ) : (
+            <span className="text-[10px] text-text-muted font-light">{originLabel}</span>
+          )}
+          {isRouteTransitioning ? (
+            <Skeleton className="h-3 w-24" />
+          ) : (
+            <span className="text-[10px] text-text-muted font-light">{destinationLabel}</span>
+          )}
         </div>
         {/* Stop labels positioned below their markers */}
         {stops.map((stop, i) => {

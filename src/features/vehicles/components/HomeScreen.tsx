@@ -14,6 +14,7 @@ import { useBottomSheet } from '../hooks/use-bottom-sheet';
 import { useBackgroundSync } from '../hooks/use-background-sync';
 import { usePullToRefresh } from '../hooks/use-pull-to-refresh';
 import { useVehicleStream } from '../hooks/use-vehicle-stream';
+import { useRouteTransition } from '../hooks/use-route-transition';
 import { VehicleDotSelector } from './VehicleDotSelector';
 import { DrivingPeekContent } from './DrivingPeekContent';
 import { ParkedPeekContent } from './ParkedPeekContent';
@@ -70,6 +71,13 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
   const currentDrive = useMemo(
     () => selectCurrentDrive(drives, vehicle.id),
     [vehicle.id, drives],
+  );
+
+  // Detect route polyline changes to show skeleton loading on stale text fields
+  const { isRouteTransitioning } = useRouteTransition(
+    vehicle.navRouteCoordinates,
+    vehicle.destinationName,
+    vehicle.etaMinutes,
   );
 
   // Derive driving status from gear — don't rely on the backend status field
@@ -183,6 +191,7 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
             vehicle={vehicle}
             currentDrive={currentDrive}
             tripProgress={tripProgress}
+            isRouteTransitioning={isRouteTransitioning}
           />
         ) : (
           <ParkedPeekContent vehicle={vehicle} />
@@ -191,7 +200,7 @@ export function HomeScreen({ vehicles, drives, onSync, wsToken, userId }: HomeSc
         {/* Half content */}
         {showHalf && (
           isDriving ? (
-            <DrivingHalfContent vehicle={vehicle} currentDrive={currentDrive} />
+            <DrivingHalfContent vehicle={vehicle} currentDrive={currentDrive} isRouteTransitioning={isRouteTransitioning} />
           ) : (
             <ParkedHalfContent vehicle={vehicle} />
           )
