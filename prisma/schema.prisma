@@ -45,48 +45,50 @@ model Account {
 // ─── Vehicles ────────────────────────────────────────────────────────────────
 
 model Vehicle {
-  id               String        @id @default(cuid())
-  userId           String
-  teslaVehicleId   String?       @unique
-  vin              String?       @unique
-  name             String
-  model            String
-  year             Int
-  color            String
-  licensePlate     String
-  chargeLevel      Int           @default(0)
-  estimatedRange   Int           @default(0)
-  status           VehicleStatus @default(offline)
-  speed            Int           @default(0)
-  gearPosition     String?
-  heading          Int           @default(0)
-  locationName     String        @default("")
-  locationAddress  String        @default("")
-  latitude         Float         @default(0)
-  longitude        Float         @default(0)
-  interiorTemp     Int           @default(0)
-  exteriorTemp     Int           @default(0)
-  odometerMiles    Int           @default(0)
-  fsdMilesSinceReset Float       @default(0)
-  virtualKeyPaired Boolean       @default(false)
-  setupStatus      SetupStatus   @default(pending_pairing)
-  destinationName      String?
-  destinationAddress   String?
-  destinationLatitude  Float?
-  destinationLongitude Float?
-  originLatitude       Float?
-  originLongitude      Float?
-  etaMinutes           Int?
-  tripDistanceMiles    Float?
+  id                    String        @id @default(cuid())
+  userId                String
+  teslaVehicleId        String?       @unique
+  vin                   String?       @unique
+  name                  String
+  model                 String
+  year                  Int
+  color                 String
+  licensePlate          String
+  chargeLevel           Int           @default(0)
+  estimatedRange        Int           @default(0)
+  chargeState           String?
+  timeToFull            Float?
+  status                VehicleStatus @default(offline)
+  speed                 Int           @default(0)
+  gearPosition          String?
+  heading               Int           @default(0)
+  locationName          String        @default("")
+  locationAddress       String        @default("")
+  latitude              Float         @default(0)
+  longitude             Float         @default(0)
+  interiorTemp          Int           @default(0)
+  exteriorTemp          Int           @default(0)
+  odometerMiles         Int           @default(0)
+  fsdMilesSinceReset    Float         @default(0)
+  virtualKeyPaired      Boolean       @default(false)
+  setupStatus           SetupStatus   @default(pending_pairing)
+  destinationName       String?
+  destinationAddress    String?
+  destinationLatitude   Float?
+  destinationLongitude  Float?
+  originLatitude        Float?
+  originLongitude       Float?
+  etaMinutes            Int?
+  tripDistanceMiles     Float?
   tripDistanceRemaining Float?
   navRouteCoordinates   Json?
-  lastUpdated      DateTime      @default(now())
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  drives           Drive[]
-  stops            TripStop[]
-  invites          Invite[]
+  lastUpdated           DateTime      @default(now())
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  drives                Drive[]
+  stops                 TripStop[]
+  invites               Invite[]
 
   @@index([userId])
 }
@@ -172,9 +174,9 @@ model Invite {
   vehicle      Vehicle          @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   sender       User             @relation("InviteSender", fields: [senderId], references: [id], onDelete: Cascade)
 
+  @@unique([vehicleId, email])
   @@index([senderId])
   @@index([vehicleId])
-  @@unique([vehicleId, email])
 }
 
 enum InviteStatus {
@@ -190,18 +192,18 @@ enum InvitePermission {
 // ─── Settings ────────────────────────────────────────────────────────────────
 
 model Settings {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
-  teslaLinked           Boolean  @default(false)
-  teslaVehicleName      String?
-  virtualKeyPaired          Boolean   @default(false)
-  keyPairingDeferredAt      DateTime?
-  keyPairingReminderCount   Int       @default(0)
-  notifyDriveStarted        Boolean   @default(true)
-  notifyDriveCompleted  Boolean  @default(true)
-  notifyChargingComplete Boolean @default(true)
-  notifyViewerJoined    Boolean  @default(true)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                      String    @id @default(cuid())
+  userId                  String    @unique
+  teslaLinked             Boolean   @default(false)
+  teslaVehicleName        String?
+  virtualKeyPaired        Boolean   @default(false)
+  keyPairingDeferredAt    DateTime?
+  keyPairingReminderCount Int       @default(0)
+  notifyDriveStarted      Boolean   @default(true)
+  notifyDriveCompleted    Boolean   @default(true)
+  notifyChargingComplete  Boolean   @default(true)
+  notifyViewerJoined      Boolean   @default(true)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
